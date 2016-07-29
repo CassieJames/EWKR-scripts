@@ -1,4 +1,8 @@
-# Scripts to sort out environmental data
+# Scripts to determine antecedent rainfall conditions for sites
+# Written by  C.S.James 
+# GNU General Public License .. feel free to use / distribute ... no warranties
+# 29th July 2016
+
 library(zoo)
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data"; setwd (data.dir) # set working directory
 Dates=data.frame(read.csv("HTH_FP_dates.csv"))
@@ -8,21 +12,21 @@ Dates2 <- within(Dates, Sample.date <- as.Date((Sample.date), format = "%d/%m/%Y
 Rainfall2 <- within(Rainfall, Date <- as.Date(as.character(Date), format = "%d/%m/%Y"))
 
 DOI = na.omit(Dates2$Sample.date) #create list of dates
-DOIUnique=as.Date(unique(na.omit(DOI)))
+DOIUnique=as.Date(unique(na.omit(DOI))) # make sure list is unique
 
 Output= matrix(NA,nrow=length(DOI), ncol=1)
 colnames(Output)=c("Date")
 Output=as.data.frame(Output)
 Output$Date<-na.omit(Dates2$Sample.date)
 
-# loops don't cope with dates - they convert to numeric so its necessary to use the apply functions instead
+# loops don't cope with dates - they convert to numeric so its necessary to use an apply function instead
 
 myfunction<-function (d){
 
-d30 =d-30 	# one month
-d90=d-90	# three months
-d180=d-180	# six months
-d365=d-365	# twelve months
+d30 =d-30 	# one month ago
+d90=d-90	# three months ago
+d180=d-180	# six months ago
+d365=d-365	# twelve months ago
 
 loi30=Rainfall2[Rainfall2$Date %in% as.Date(d:d30),]
 loi90=Rainfall2[Rainfall2$Date %in% as.Date(d:d90),]
