@@ -14,7 +14,9 @@ Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(uniq
 rownames(Output)=unique(mydata$Unique_site_year)
 colnames(Output)=sort(unique(mydata$Scientific_name))
 
-#for each site and sample date retrieve species list and then loop through and place in results matrix
+
+# This section just creates a species x site matrix with no environmental attributes
+# for each site and sample date retrieve species list and then loop through and place in results matrix
 for(s in sitelist) {
 tdata=mydata[which(mydata$Unique_site_year==s),]
 sitesp=unique(tdata$Scientific_name)
@@ -27,7 +29,7 @@ Output[grep(s, rownames(Output)),grep(spp,colnames(Output))] <- abund
 # Replace all NAs with zero for analysis
 Output[is.na(Output)] <- 0
 
-
+# This section creates a matrix with the environmental attributes tagged onto the end
 # Create species matrix with environmental data attributes
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("HTH_FP.csv")) # load species data
@@ -40,7 +42,7 @@ mydata_env=merge(mydata, Rainfall.dat, by.x="Date.of.collection", by.y="Date") #
 mydata_rainfall=mydata_env[,c("Unique_site_year", "d30", "d90", "d180", "d365")]
 mydata_rainfall=unique(mydata_rainfall)
 
-# Create species x site matrix
+# Create species x site matrix and tag on environmental data
 specieslist=unique(mydata$Scientific_name)
 sitelist=unique(mydata$Unique_site_year)
 Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(unique(mydata$Scientific_name)))
@@ -60,6 +62,8 @@ Output[grep(s, Output$Row.names),grep(spp,colnames(Output))] <- abund
 
 Output[is.na(Output)] <- 0
 
-#### Add flood frequency zones and flood history to data frame
+Spp_Env_matrix_HTH_FP=Output # take a copy
+
+write.csv(Spp_Env_matrix , file = "Spp_Env_matrix_HTH_FP.csv") # save data out
 
 
