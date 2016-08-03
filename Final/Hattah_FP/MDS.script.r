@@ -1,15 +1,23 @@
-# script to plot basic mds and display by date and 
+# Script to undertake basic MDS
+# Written by  C.S.James 
+# GNU General Public License .. feel free to use / distribute ... no warranties
+# 29th July 2016
 library(vegan)
 library(labdsv)
 library(RColorBrewer)
 
-Output.com<-dropspc(Output, 2)   # remove species that occur in = > two sites/date combos
-Output.com=Output.com[rowSums(Output.com != 0) > 0,]	# remove sites with no records
+data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd(data.dir)
+data.matrix=read.csv("Spp_Env_matrix_HTH_FP.csv") # load data
+Output=data.matrix[,c(3:270)] # need to check these numbers and chaznge code eventually - just a cheat method for the time being
+rownames(Output)=data.matrix$Row.names
+remove=c("TR4SOT3_08", "TR5OFT3_14","TR5OFT4_14") # extreme outliers
+Output=Output[!rownames(Output) %in% remove, ]
+remove=c("Inundated.x", "Leaf litter >50%") # columns that are not live vegetation
+Output=Output[,!colnames(Output) %in% remove ]
+Output<-dropspc(Output, 2)   # remove species that occur in = < two sites/date combos
+Output=Output[rowSums(Output!= 0) > 0,]	# remove sites with no records 
 
-remove=c("TR4SOT3_08") # extreme outlier
-Output.com=Output.com[!rownames(Output.com) %in% remove, ]
-
-result<-metaMDS(log(Output.com+1), distance="bray", autotransform=F, k=2)
+result<-metaMDS((Output), distance="bray", autotransform=F, k=2)
 site.scores=scores(result, display="sites") 
 tdata=as.data.frame(site.scores)
 tdata$groups<- rownames(tdata)
@@ -56,8 +64,16 @@ ordisegments(result, tdata$groups, col=colvec[i], display = "sites", show.groups
 } 
 
 
-# With environmental data
 
-Output.com<-dropspc(Output, 2)   # remove species that occur in = > two sites/date combos
 
-ef1 <- envfit(result, envdata, permu = 999, na.rm=TRUE) 
+
+
+
+
+
+
+
+
+
+
+

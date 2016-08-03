@@ -31,17 +31,24 @@ Output[is.na(Output)] <- 0
 
 # This section creates a matrix with the environmental attributes tagged onto the end
 # Create species matrix with environmental data attributes
+# load environmental data from various sources - this is messy because the predictor variables were/are in various states 
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("HTH_FP.csv")) # load species data
-image.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/"; setwd(image.dir)
+data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/"; setwd(data.dir)
+Hydrodata=data.frame(read.csv("Flood_HTH_FP_pumps_corrected.csv")) # load corrected hydro data with duplicates and date errors removed
 Rainfall.dat=data.frame(read.csv("Rainfall_HTH_FP.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
-Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%d/%m/%Y")) # ensure dates are recognised in rainfall data
-mydata <- within(mydata, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are recognised in species data
+Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%d/%m/%Y")) # ensure dates are recognised in rainfall dat
+GIS.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/GIS stuff/"; setwd(GIS.dir)
+HTH_FP_locs=data.frame(read.csv("HTH_FP_locations.csv"))
+Hydrodata=Hydrodata[!duplicated(Hydrodata), ] # remove duplicates
+mydata <- within(mydata, Date.of.collection <- as.De(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are recognised in species data
 Rainfall.dat=Rainfall.dat[!duplicated(Rainfall.dat), ] # remove duplicates
 mydata_env=merge(mydata, Rainfall.dat, by.x="Date.of.collection", by.y="Date") # merge species data with rainfall data by date to create a unique site-sample date by rainfall metrics table
 mydata_rainfall=mydata_env[,c("Unique_site_year", "d30", "d90", "d180", "d365")]
 mydata_rainfall=unique(mydata_rainfall)
-
+mydata_env=merge(mydata_rainfall, Hydrodata, by="Unique_site_year") # merge with hydrodata
+mydata_env=merge(mydata_env, HTH_FP_locs, by="Site.ID") # merge with location info
+ 
 # Create species x site matrix and tag on environmental data
 specieslist=unique(mydata$Scientific_name)
 sitelist=unique(mydata$Unique_site_year)
@@ -49,7 +56,7 @@ Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(uniq
 rownames(Output)=unique(mydata$Unique_site_year)
 colnames(Output)=sort(unique(mydata$Scientific_name))
 Output=as.data.frame(Output)
-Output=merge(Output, mydata_rainfall, by.x="row.names", by.y="Unique_site_year", all.x=TRUE) # add rainfall metrics to empty site x species matrix
+Output=merge(Output, mydata_env, by.x="row.names", by.y="Unique_site_year", all.x=TRUE) # add rainfall metrics to empty site x species matrix
 
 for(s in sitelist) { # Fill matrix
 tdata=mydata[which(mydata$Unique_site_year==s),]
@@ -60,10 +67,10 @@ Output[grep(s, Output$Row.names),grep(spp,colnames(Output))] <- abund
 }
 }
 
-Output[is.na(Output)] <- 0
+Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix
+
 
 Spp_Env_matrix_HTH_FP=Output # take a copy
-
-write.csv(Spp_Env_matrix , file = "Spp_Env_matrix_HTH_FP.csv") # save data out
+write.csv(Spp_Env_matrix_HTH_FP , file = "Spp_Env_matrix_HTH_FP.csv") # save data out
 
 
