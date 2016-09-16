@@ -1,37 +1,21 @@
 # Script to undertake analysis of Hattah Floodplains vegetation data using boosted generalized additive models
-# 
 # Adapted by C James from sample code provided by Maloney et al. 2012 (Applying additive modelling, Methods in Ecology and Evolution vol 3, 116-128, Appendix E)
-# 
-# 1st August 2016 
+# 19th August 2016 
 #
 # Load data and libraries
 library(mboost)
 library(MASS)
 library(PerformanceAnalytics)
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd(data.dir)
-data.matrix=read.csv("Spp_Env_matrix_HTH_FP.csv") # load data
-
-# create diversity metric (just to work with a single response variable for the time being)
-spp.matrix=data.matrix[,c(3:270)]
-rownames(spp.matrix)=data.matrix$Row.names
-spp.matrix.pa=spp.matrix
-spp.matrix.pa[ spp.matrix.pa> 0]<- 1 # make a copy of the spp matrix and turn into p/a data
-Richness=as.data.frame(rowSums(spp.matrix.pa))
-colnames(Richness)=c("Richness")
-
-H.index=(as.data.frame(diversity(spp.matrix, index="shannon")))
-colnames(H.index)=c("H_index")
+data.matrix=read.csv("Final_Metrics_Hattah_FP.csv") # load data
+image.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Plots/";
 
 # sort out environmental data - centre and logarithmize
-envdata=data.matrix[,c("d30", "d90", "d180", "d365", "Inundated.y","Flood_frequency","TSLF", "Easting", "Northing" )]
+envdata=data.matrix[,c("d30", "d90", "d180", "d365", "Inundated","Flood_frequency","TSLF", "Easting", "Northing","H_index")]
 envdata_backup=envdata
 rownames(envdata)=(data.matrix$Row.names)
-envdata$Inundated.y=as.numeric(envdata$Inundated.y) # for some reason categoric variable turned into numeric value of 15?!
-envdata$Inundated.y[envdata$Inundated.y==15] <- "YES"#envdata$Inundated.y is a categoric variable which describes whether the site was inundated/damp at the time of the survey
 
 # Note: rainfall variables are (predictably) highly correlated so I am dropping the most correlated (d90 and d180) and am left with d30 and d365 which still have correlation coeff of 0.88! 
-# 
-
 # highly skewed distributions were log10 transformed before analysis
 envdata$d30=as.numeric(scale(log10(envdata$d30+1),center=TRUE, scale=FALSE)) # added one to avoid return of infinity values due to low mean rainfall over shorter time periods
 envdata$d90=as.numeric(scale(log10(envdata$d90+1),center=TRUE, scale=FALSE))
@@ -42,11 +26,7 @@ envdata$TSLF=as.numeric(scale(log10(envdata$TSLF+1),center=TRUE, scale=FALSE))
 envdata$Easting=as.numeric(scale(envdata$Easting^2,center=FALSE, scale=TRUE))
 envdata$Northing=as.numeric(scale(envdata$Northing^2,center=FALSE, scale=TRUE))
 
-
 envdata$INT <- rep(1,nrow(envdata)) # provide intercept variable
-
-daten=merge(envdata,H.index,by="row.names") # merge diversity estimate with environmental predictors
-daten.rich=merge(envdata,Richness,by="row.names") # merge diversity estimate with environmental predictors
 
 ####################################################DIVERSITY analysis
 
@@ -56,7 +36,7 @@ indvecL <-sample(1:n,n,replace=FALSE) # create a random set of numbers
 datenSmall <- daten[indvecL,][1:(n/2),] # create a subset of half the original data using the random numbers
 
 #specify model formula - kept relatively simple of the time being (bols are linear effects, bbs are smoothed effects and bspatial are spatial effects)
-formulaB <- H_index ~ bols(Easting, intercept=FALSE)+bols(Northing, intercept=FALSE)+
+formulaB <- H_index ~ bols(Easting, intercept=FALSE)+bols(Northing, intercept=FALSE)+brandom(Site.ID,df=1)+
 bspatial(Easting, Northing, knots=20, center=TRUE, df=1, differences=1)+
 bols(d30, intercept=FALSE)+bbs(d30, center=TRUE, df=1)+
 bols(d365, intercept=FALSE)+bbs(d365, center=TRUE, df=1)+
@@ -78,9 +58,9 @@ indvec<-sample(1:n,n,replace=TRUE)
 traindata<-datenSmall[indvec,]
 traindatav2=traindata[,-1] # remove site names from data frame
 
-# Run model
+# Run Full model for diversity
 
-Full.model <-gamboost(formulaB,data=traindatav2, family=Gaussian(), control=boost_control(mstop=1000,trace=TRUE)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
+Full.model <-gamboost(formulaB,data=daten, family=Gaussian(), control=boost_control(mstop=1000,trace=TRUE)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
 # This churns out a couple of warnings that I don't fully understand regarding the linear effects - covariates should be (mean-) centered if intercept =False for Easting, Northing and d30
 mopt <- mstop(aic <- AIC(Full.model)) # also suggests that mstop is 10000 during initial run
 
@@ -90,16 +70,91 @@ cvm <- cvrisk(Full.model, folds=cv5f)
 #plot(cvm)
 st<-(mstop(cvm))
 Full.model[st]
+coef(Full.model)
+
+# create new data frame with residuals for plotting and also for use in t+1
+newdat <- cbind(traindatav2$Site.ID, as.data.frame(residuals(Full.model))) # extract residuals
+newdat=cbind(newdat, traindata$Row.names)
+colnames(newdat)=c("Site.ID", "resid", "Site.year")
+
+substrRight <- function(x, n){ # script to grab year off row names
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+Site.year=newdat$Site.year
+year=sapply(Site.year, function (x) substrRight(x, 2))
+year=as.data.frame(year)
+newdat=cbind(newdat, year)
+newdat$year=as.numeric(newdat$year)
+sitelist=unique(newdat$Site.ID)
+newdat$newresid=NA # creates new column into which the residuals from the last time period will be added
+
+
+for(s in sitelist) { # loop through each site - because some sites don't have year 4 I have had to create two sets of rules
+yoi=unique(newdat[which(newdat$Site.ID==s),c("year")])
+if("4" %in% yoi){
+newdat[which(newdat$Site.ID==s & newdat$year==1),c("newresid")] = 0.1
+roi_t2=newdat[which(newdat$Site.ID==s & newdat$year==1),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==2),c("newresid")] = roi_t2
+roi_t3=newdat[which(newdat$Site.ID==s & newdat$year==2),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==3),c("newresid")] = roi_t3
+roi_t4=newdat[which(newdat$Site.ID==s & newdat$year==3),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==4),c("newresid")] = roi_t4
+roi_t5=newdat[which(newdat$Site.ID==s & newdat$year==4),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==5),c("newresid")] = roi_t5
+roi_t6=newdat[which(newdat$Site.ID==s & newdat$year==5),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==6),c("newresid")] = roi_t6
+roi_t7=newdat[which(newdat$Site.ID==s & newdat$year==6),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==7),c("newresid")] = roi_t7
+roi_t8=newdat[which(newdat$Site.ID==s & newdat$year==7),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==8),c("newresid")] = roi_t8}
+
+if(!"4" %in% yoi){
+newdat[which(newdat$Site.ID==s & newdat$year==1),c("newresid")] = 0.1
+roi_t2=newdat[which(newdat$Site.ID==s & newdat$year==1),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==2),c("newresid")] = roi_t2
+roi_t3=newdat[which(newdat$Site.ID==s & newdat$year==2),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==3),c("newresid")] = roi_t3
+roi_t5=newdat[which(newdat$Site.ID==s & newdat$year==3),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==5),c("newresid")] = roi_t5
+roi_t6=newdat[which(newdat$Site.ID==s & newdat$year==5),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==6),c("newresid")] = roi_t6
+roi_t7=newdat[which(newdat$Site.ID==s & newdat$year==6),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==7),c("newresid")] = roi_t7
+roi_t8=newdat[which(newdat$Site.ID==s & newdat$year==7),c("resid")] 
+newdat[which(newdat$Site.ID==s & newdat$year==8),c("newresid")] = roi_t8}
+
+}
+
+newdat$Row.names=rownames(newdat)
+daten_resid=merge(daten,newdat[,c("newresid", "Row.names")],by="Row.names") # merge data with new residuals to create the data dataframe with the residuals added as a predictor
+daten_resid$newresid=as.numeric(scale(daten_resid$newresid, scale=TRUE))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Example of marginal functional estimates of boosted additive models for flood frequency, time since last flood and rainfall in 90 days prior to sampling
 # rem that data has been centred so when looking at the plots its helpful to 'uncentre' the data
 mFf<-mean(envdata_backup$Flood_frequency)
-
 xmatLin <- extract(Full.model, which=8)
 xmatSmooth <- extract(Full.model, which=9)
-
 par(mfrow = c(3,2))
-
 # the below line had to adapted from the paper to correct for the type of speech marks, the order or the components and the spacing around the equals signs: see coef(Full.model)
 yvalues=xmatSmooth[[1]]%*%coef(Full.model)$`bbs(Flood_frequency, df = 1, center = TRUE)` + xmatLin[[1]]*coef(Full.model)$`bols(Flood_frequency, intercept = FALSE)`
 plot(sort(traindata$Flood_frequency+mFf),yvalues[order(traindata$Flood_frequency+mFf)], type="l",xlab='Flood frequency', ylab='f(Flood frequency)')
