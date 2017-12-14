@@ -5,9 +5,12 @@
 
 # Import data
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_FP.csv"))
+mydata=data.frame(read.csv("HTH_WL.csv"))
 mycodes=data.frame(read.csv("HL_FP_sp_codes.csv"))
-mydata=merge(mydata,mycodes,by.x="Scientific_name", by.y="Scientific.name")
+mydata=merge(mydata,mycodes,by.x="Scientific.name", by.y="Scientific.name", all.x=all)
+new_mydata<- mydata[is.na(mydata$sp_code),]
+species_without_codes=unique(new_mydata$Scientific.name)
+write.csv(species_without_codes , file = "Hattah WL species needing codes.csv") # save data out and sort out codes manually where required
 
 
 ###########################################################################################
@@ -15,17 +18,14 @@ mydata=merge(mydata,mycodes,by.x="Scientific_name", by.y="Scientific.name")
 # load environmental data from various sources - this is messy because the predictor variables were/are in various locations and states
 
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_FP.csv"))
-mycodes=data.frame(read.csv("HL_FP_sp_codes.csv"))
-mydata=merge(mydata,mycodes,by.x="Scientific_name", by.y="Scientific.name")
+mydata=data.frame(read.csv("HTH_WL.csv"))
+mycodes=data.frame(read.csv("HL_sp_codes.csv"))
+mydata=merge(mydata,mycodes,by="Scientific.name")
 
-data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd(data.dir)
-Hydrodata=data.frame(read.csv("Flood_HTH_FP_pumps_corrected 60 day interval.csv")) # load corrected hydro data with duplicates and date errors removed
-
-data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes rainfall/"; setwd(data.dir)
-Rainfall.dat=data.frame(read.csv("Rainfall_HTH_FP.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
-Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%Y-%m-%d")) # ensure dates are recognised in rainfall dat
-
+data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/"; setwd(data.dir)
+Hydrodata=data.frame(read.csv("Flood_HTH_FP_pumps_corrected.csv")) # load corrected hydro data with duplicates and date errors removed
+Rainfall.dat=data.frame(read.csv("Rainfall_HTH_WL.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
+Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%d/%m/%Y")) # ensure dates are recognised in rainfall dat
 GIS.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/GIS stuff/"; setwd(GIS.dir)
 HTH_FP_locs=data.frame(read.csv("HTH_FP_locations.csv")) # load site longs and lats
 Hydrodata=Hydrodata[!duplicated(Hydrodata), ] # remove duplicates
@@ -47,10 +47,6 @@ Temperature.dat=Temperature.dat[,c(2:14)]
 Temperature.dat=Temperature.dat[!duplicated(Temperature.dat), ] # remove duplicates
 mydata_env <- within(mydata_env, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are still recognised!
 mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection", by.y="Date") # merge 
- 
-data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes veg structure/"; setwd(data.dir)
-VegStructure.dat=data.frame(read.csv("Hattah FP Veg Structure.csv")) # load veg structure data
-mydata_env=merge(mydata_env, Temperature.dat, by="Site.ID") # merge 
  
 # Create species x site matrix and tag on environmental data
 specieslist=unique(mydata$sp_code)
@@ -78,7 +74,7 @@ Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix
 
 Spp_Env_matrix_HTH_FP=Output # take a copy
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-write.csv(Spp_Env_matrix_HTH_FP , file = "Spp_Env_matrix_HTH_FP_Dec 2017.csv") # save data out
+write.csv(Spp_Env_matrix_HTH_FP , file = "Spp_Env_matrix_HTH_FP.csv") # save data out
 
 ###########################################################################################
 #Scripts to calculate various vegetation metrics

@@ -2,7 +2,7 @@
 # Written by  C.S.James 
 # GNU General Public License .. feel free to use / distribute ... no warranties
 # 29th July 2016
-# Note probably very long winded way of getting a reasonable approximation for flood frequency that takes pumping activities into account....
+# Note: probably very long winded way of getting a reasonable approximation for flood frequency that takes pumping activities into account....
 
 image.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Euston flow data/"
 setwd(image.dir) # set image directory for output
@@ -65,7 +65,7 @@ mtext("Rainfall @ NULKWYNE KIAMAL (76043)",side=3, family="A", cex=0.8,font=2, a
 
 dev.off()
 
-
+##########################################################################################################
 ### script to determine long term flood frequency for Hattah Lakes floodplain sites
 library(hydrostats)
 
@@ -74,10 +74,10 @@ library(hydrostats)
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Euston flow data/"; setwd(data.dir)
 Euston_discharge<-data.frame(read.csv(file="MeanWaterFlow_Euston.csv"))
 Euston_discharge$Date <- as.Date(Euston_discharge$Date, format="%d/%m/%Y") 
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data"; setwd (data.dir) # set working directory
+data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
 Flood.dat=data.frame(read.csv("HFP_FLOOD_DAT2.csv")) # load hydrological information
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_FP.csv"))
+mydata=data.frame(read.csv("HTH_FP.csv")) # note that dates of collection have been corrected already in this file
 
 # Step 2 - create a data frame to receive results
 
@@ -127,9 +127,10 @@ pump.activity["pump.2010","Flow"]=0 # for the time being don't adjust for 2010 a
 
 loi30=rbind(loi30,pump.activity) # bind pumping activities to end of flow record
 loi30=loi30[order(as.Date(loi30$Date, format="%Y-%m-%d")),] # sort data into time series for high spell analysis
+loi30=loi30[loi30$Date<Date,] # remove pumping activities that occur after sampling date!
 colnames(loi30)=c("Date", "Q") # rename columns so high.spell.lengths function recognises name
 DOI=ts.format(loi30, format="%Y-%m-%d") # change into standard date format so that function recognises date
-Duration=high.spell.lengths(DOI, threshold=CTF) # determine high spells for specified 30 year record based on CTF threshold - 5 day separation of peaks required to determine separate events
+Duration=high.spell.lengths(DOI, threshold=CTF, ind.days=60) # determine high spells for specified 30 year record based on CTF threshold - 60 day separation of peaks required to determine separate events
 Duration$start.date <- as.Date(Duration$start.date, format = "%Y-%m-%d") # ensure dates are in same format
 Duration=Duration[Duration$start.date %in% (d30:Date),] #subset output to only period of interest - because I tagged pump events onto loi30 its included events that happened AFTER the sampling - these need to be removed
 Frequency=nrow(Duration) # thirty year flood frequency - number of spell events in output
@@ -142,4 +143,4 @@ tdata[grep(s, tdata$Unique_site_year),c("TSLF")] <- TSLF # TSLF = time since las
 }
 
 HTH_FP_Flood_data=tdata # copy data so the file name is more informative
-write.csv(HTH_FP_Flood_data , file = "Flood_HTH_FP_pumps.csv") # save data out
+write.csv(HTH_FP_Flood_data , file = "Flood_HTH_FP_pumps_corrected 60 day interval.csv") # save data out
