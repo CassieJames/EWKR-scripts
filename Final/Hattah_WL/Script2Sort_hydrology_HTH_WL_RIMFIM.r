@@ -23,6 +23,7 @@ Flood.dat$Y2014 <- as.Date(Flood.dat$Y2014, format="%d/%m/%Y")
 Flood.dat$Site.ID=gsub("KRT","KT",Flood.dat$Site.ID)
 Flood.dat$Site.ID=gsub("CCNT","NCT",Flood.dat$Site.ID)
 
+
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("HTH_WL.csv"))
 mydata$Site.ID=gsub("CCNT","NCT",mydata$Site.ID) # this adjusts for the differences in labels between the veg database and the location file sent by Cherie - my attempt to make everything consistent

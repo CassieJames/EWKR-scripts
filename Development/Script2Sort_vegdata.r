@@ -18,39 +18,47 @@ data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegeta
 mydata=data.frame(read.csv("HTH_FP.csv"))
 mycodes=data.frame(read.csv("HL_FP_sp_codes.csv"))
 mydata=merge(mydata,mycodes,by.x="Scientific_name", by.y="Scientific.name")
+mydata <- within(mydata, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are recognised as dates!
 
+#Hydrology
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd(data.dir)
 Hydrodata=data.frame(read.csv("Flood_HTH_FP_pumps_corrected 60 day interval.csv")) # load corrected hydro data with duplicates and date errors removed
+Hydrodata=Hydrodata[!duplicated(Hydrodata), ] # remove duplicates
+Hydrodata=Hydrodata[,c(3,7,8,14,15)] # tidy up and remove extra columns not needed
 
+#Rainfall
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes rainfall/"; setwd(data.dir)
 Rainfall.dat=data.frame(read.csv("Rainfall_HTH_FP.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
 Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%Y-%m-%d")) # ensure dates are recognised in rainfall dat
+Rainfall.dat=Rainfall.dat[!duplicated(Rainfall.dat), ] # remove duplicates
+Rainfall.dat=Rainfall.dat[,c(2:6)]
 
+#locations
 GIS.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/GIS stuff/"; setwd(GIS.dir)
 HTH_FP_locs=data.frame(read.csv("HTH_FP_locations.csv")) # load site longs and lats
-Hydrodata=Hydrodata[!duplicated(Hydrodata), ] # remove duplicates
-mydata <- within(mydata, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are still recognised!
-Rainfall.dat=Rainfall.dat[!duplicated(Rainfall.dat), ] # remove duplicates
-mydata_env=merge(mydata, Rainfall.dat, by.x="Date.of.collection", by.y="Date") # merge species data with rainfall data by date to create a unique site-sample date by rainfall metrics table
-mydata_rainfall=mydata_env[,c("Unique_site_year", "d30", "d90", "d180", "d365")]
-mydata_rainfall=unique(mydata_rainfall)
-mydata_env=merge(mydata_rainfall, Hydrodata, by="Unique_site_year") # merge with hydrodata - I have used merge as this is safer in case the rows are not in the same order
-mydata_env=merge(mydata_env, HTH_FP_locs, by="Site.ID") # merge with location info
-wrc.data=mydata[,c("Site.ID", "WRC")]# extracts WRC and attributes to site
-wrc.data=wrc.data[!duplicated(wrc.data), ]
-mydata_env=merge(mydata_env, wrc.data, by="Site.ID") # merge with location info
 
+#Temperature
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes temperature/"; setwd(data.dir)
 Temperature.dat=data.frame(read.csv("Temperature_HTH_FP.csv")) # load temperature data which is already sorted into dates x rainfall metrics
 Temperature.dat <- within(Temperature.dat, Date <- as.Date(as.character(Date), format = "%Y-%m-%d")) # ensure dates are recognised in rainfall dat
 Temperature.dat=Temperature.dat[,c(2:14)]
 Temperature.dat=Temperature.dat[!duplicated(Temperature.dat), ] # remove duplicates
-mydata_env <- within(mydata_env, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are still recognised!
-mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection", by.y="Date") # merge 
- 
+
+#Veg overstorey structure
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes veg structure/"; setwd(data.dir)
 VegStructure.dat=data.frame(read.csv("Hattah FP Veg Structure.csv")) # load veg structure data
-mydata_env=merge(mydata_env, Temperature.dat, by="Site.ID") # merge 
+VegStructure.dat<-VegStructure.dat[,c(2,11)] 
+
+#Merge various datasets
+mydata_env=merge(mydata, Rainfall.dat, by.x="Date.of.collection", by.y="Date") # merge species data with rainfall data by date to create a unique site-sample date by rainfall metrics table
+mydata_env=merge(mydata_env, Hydrodata, by="Unique_site_year") # merge with hydrodata - I have used merge as this is safer in case the rows are not in the same order
+mydata_env=merge(mydata_env, HTH_FP_locs, by="Site.ID") # merge with location info
+mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection", by.y="Date") # merge 
+mydata_env=merge(mydata_env, VegStructure.dat, by="Site.ID") # merge  
+
+mydata_env_OI=mydata_env[,c("Unique_site_year", "Flow", "Inundated","d30", "d365", "Flood_frequency", "MaxTemp365", "MinTemp365","VEG_CLASS")]
+mydata_env_OI=mydata_env_OI[!duplicated(mydata_env_OI), ] # remove duplicates
+
  
 # Create species x site matrix and tag on environmental data
 specieslist=unique(mydata$sp_code)
@@ -61,24 +69,26 @@ Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(spec
 rownames(Output)=unique(mydata$Unique_site_year)
 colnames(Output)=sort(specieslist)
 Output=as.data.frame(Output)
-Output=merge(Output, mydata_env, by.x="row.names", by.y="Unique_site_year", all.x=TRUE) # add rainfall metrics to empty site x species matrix
+
 
 for(s in sitelist) { # Fill matrix
 tdata=mydata[which(mydata$Unique_site_year==s),]
 sitesp=unique(tdata$sp_code)
 takeout=c("Inundate", "Lea.litt", "Bar.grou")
 sitesp=sitesp[!sitesp %in% takeout]
+s=as.character(s)
 for (spp in sitesp) {
 abund=max(tdata$Abundance[which(tdata$sp_code==spp)])
-Output[grep(s, Output$Row.names),grep(spp,colnames(Output))] <- abund
+Output[grep(s, rownames(Output)),grep(spp,colnames(Output))] <- abund
 }
 }
 Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix
 
 
-Spp_Env_matrix_HTH_FP=Output # take a copy
+Spp_Env_HTH_FP=merge(Output,mydata_env_OI ,by.x="row.names", by.y="Unique_site_year") # merge 
+
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-write.csv(Spp_Env_matrix_HTH_FP , file = "Spp_Env_matrix_HTH_FP_Dec 2017.csv") # save data out
+write.csv(Spp_Env_HTH_FP , file = "Spp_Env_HTH_FP_Dec 2017.csv") # save data out
 
 ###########################################################################################
 #Scripts to calculate various vegetation metrics
