@@ -7,8 +7,8 @@ library(labdsv)
 library(RColorBrewer)
 
 data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd(data.dir)
-data.matrix=read.csv("Spp_Env_matrix_HTH_FP.csv") # load data
-Output=data.matrix[,c(3:270)] # need to check these numbers and chaznge code eventually - just a cheat method for the time being
+data.matrix=read.csv("Spp_Env_HTH_FP_Dec 2017.csv") # load data
+Output=data.matrix[,c(3:267)] # need to check these numbers and change code eventually - just a cheat method for the time being
 rownames(Output)=data.matrix$Row.names
 remove=c("TR4SOT3_08", "TR5OFT3_14","TR5OFT4_14") # extreme outliers
 Output=Output[!rownames(Output) %in% remove, ]

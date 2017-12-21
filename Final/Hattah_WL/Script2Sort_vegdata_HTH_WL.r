@@ -2,15 +2,13 @@
 # Written by  C.S.James 
 # GNU General Public License .. feel free to use / distribute ... no warranties
 # 15th December 2017
-
-
 ###########################################################################################
 # This section creates a matrix with the environmental attributes tagged onto the end
 # load environmental data from various sources - this is messy because the predictor variables were/are in various locations and states
 
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_WL.csv"))
-mycodes=data.frame(read.csv("HL_WL_sp_codes.csv"))
+mydata=data.frame(read.csv("HTH_WL_FGcorrections.csv")) # functional group allocations corrected in veg database (some species had two different FG assignments)
+mycodes=data.frame(read.csv("HL_WL_sp_codes.csv")) # creation of unique species codes
 mydata=merge(mydata,mycodes,by="Scientific.name")
 mydata <- within(mydata, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are recognised as dates!
 
@@ -61,27 +59,27 @@ mydata_env=merge(mydata2, Rainfall.dat, by.x="Date.of.collection.y", by.y="Date"
 mydata_env=merge(mydata_env, Hydrodata, by="Unique_site_year", all.x=TRUE) # I am not sure why but when I merge its duplicating selected lines of the database....
 mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection.y", by.y="Date",all.x=TRUE) # merge 
 mydata_env=merge(mydata_env, VegStructure.dat, by="Site.ID", all.x=TRUE) # merge  
+
+# Had to change some of the site codes as the Hattah lakes site codes are a subset of some of the Chalka creek and Little Hattah site codes so the matrix was filled in correctly
 mydata_env$Unique_site_year=gsub("CHT","CCS",mydata_env$Unique_site_year)
 mydata_env$Site.ID=gsub("CHT","CCS",mydata_env$Site.ID)
+mydata_env$Unique_site_year=gsub("LHT","LHAT",mydata_env$Unique_site_year)
+mydata_env$Site.ID=gsub("LHT","LHAT",mydata_env$Site.ID)
+mydata_env_OI=mydata_env[,c("Unique_site_year", "Inundated","d30", "d365", "Flood_frequency", "MaxTemp365", "MinTemp365","VEG_CLASS")] # subset to useful env data
+mydata_env_OI=mydata_env_OI[!duplicated(mydata_env_OI), ] # remove duplicates (I think I solved this so probably are not any more duplicates)
 
-mydata_env_OI=mydata_env[,c("Unique_site_year", "Inundated","d30", "d365", "Flood_frequency", "MaxTemp365", "MinTemp365","VEG_CLASS")]
-mydata_env_OI=mydata_env_OI[!duplicated(mydata_env_OI), ] # remove duplicates
-
- 
 # Create species x site matrix and tag on environmental data
-specieslist=unique(mydata$sp_code)
-sitelist=unique(mydata$Unique_site_year)
-sitelist=gsub("CHT","CCS",sitelist)
+specieslist=unique(mydata_env$sp_code)
+sitelist=unique(mydata_env$Unique_site_year)
 takeout=c("Inundate", "Lea.litt", "Bar.grou") # remove non species
 specieslist=specieslist[!specieslist %in% takeout]
-Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(specieslist))
-rownames(Output)=unique(mydata$Unique_site_year)
+Output= matrix(NA,nrow=length(unique(mydata2$Unique_site_year)), ncol=length(specieslist))
+rownames(Output)=sitelist
 colnames(Output)=sort(specieslist)
 Output=as.data.frame(Output)
 
-
 for(s in sitelist) { # Fill matrix
-tdata=mydata[which(mydata$Unique_site_year==s),]
+tdata=mydata_env[which(mydata_env$Unique_site_year==s),]
 sitesp=NULL
 abund=NULL
 sitesp=unique(tdata$sp_code)
@@ -105,38 +103,48 @@ data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegeta
 write.csv(Spp_Env_HTH_WL , file = "Spp_Env_HTH_WL_Dec 2017.csv") # save data out
 
 ###########################################################################################
-#Scripts to calculate various vegetation metrics
+## Script to aggregate data to wetland and year
+
+wetlist=c("BIT","BLT", "BOT", "BRT", "CCS", "HT", "KT", "LHAT", "MOT", "NCT", "NN", "YT")
+yoi=c("_08", "_09","_10","_11", "_12", "_13", "_14", "_16")
+tt = expand.grid(wetlist,yoi); tt = paste(tt[,1],tt[,2],sep='_')
+
+tada = matrix(NA,nrow=length(tt),ncol=ncol(Output))#define the output matrix
+rownames(tada)=tt
+colnames(tada)=colnames(Output)
+
+for(w in wetlist) { # 
+tdata=Output[grep(w,rownames(Output)),]
+
+for (yy in yoi) {
+ttdata=tdata[grep(yy,rownames(tdata)),]
+out=colSums(ttdata)
+tada[grep(paste(w,yy,sep="_"),rownames(tada)),] = out
+}
+
+}
+
+tada=tada[rowSums(tada!= 0) > 0,]	# remove sites with no records (e.g. BIT was not sampled until 2013 so there is no data for 2008-2012)
 
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_WL.csv"))
-mycodes=data.frame(read.csv("HL_WL_sp_codes.csv"))
-mydata=merge(mydata,mycodes,by="Scientific.name")
-mydata$Site.ID=gsub("CHT","CCS",mydata$Site.ID) # I had to change these codes as the original code "CHT" had the Hattah Lakes code as a subset or it....I could not use regular expressions because there was a plus sign in the site name.
-mydata$Unique_site_year=gsub("CHT","CCS",mydata$Unique_site_year)
-
-# Create species x site matrix and tag on environmental data
-specieslist=unique(mydata$sp_code)
-sitelist=unique(mydata$Unique_site_year)
-takeout=c("Inundate", "Lea.litt", "Bar.grou") # remove non species
-specieslist=specieslist[!specieslist %in% takeout]
-Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(specieslist))
-rownames(Output)=unique(mydata$Unique_site_year)
-colnames(Output)=sort(specieslist)
-Output=as.data.frame(Output)
+write.csv(tada , file = "Spp_site_matrix summarised to wetland_HTH_WL_Dec 2017.csv") # save data out
 
 
-for(s in sitelist) { # Fill matrix
-tdata=mydata[which(mydata$Unique_site_year==s),]
-sitesp=unique(tdata$sp_code)
-takeout=c("Inundate", "Lea.litt", "Bar.grou")
-sitesp=sitesp[!sitesp %in% takeout]
-s=as.character(s)
-for (spp in sitesp) {
-abund=max(tdata$Abundance[which(tdata$sp_code==spp)])
-Output[grep(s, rownames(Output),fixed=TRUE),grep(spp,colnames(Output), fixed=TRUE)] <- abund # needed fixed=TRUE to work
-}
-}
-Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################################
+#Scripts to calculate various vegetation metrics
 
 ######## Exotic metrics ########
 # Determine proportion of occurrences that are exotic species
@@ -175,17 +183,6 @@ Outputt$Arp <- NA
 Outputt$F <- NA
 Outputt$S <- NA
 specieslist=colnames(Output)
-
-options(warn=2) # the code below was giving a warning which suggested more than one functional group per species so this function turns warnings into errors which mean loop will fail at problem species
-
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_WL_FGcorrections.csv")) # had to correct where species was designated >1 functional group
-mycodes=data.frame(read.csv("HL_WL_sp_codes.csv"))
-mydata=merge(mydata,mycodes,by="Scientific.name")
-mydata$Site.ID=gsub("CHT","CCS",mydata$Site.ID) # I had to change these codes as the original code "CHT" had the Hattah Lakes code as a subset or it....I could not use regular expressions because there was a plus sign in the site name.
-mydata$Unique_site_year=gsub("CHT","CCS",mydata$Unique_site_year)
-specieslist=unique(mydata$sp_code)
-sitelist=unique(mydata$Unique_site_year)
 
 FGs=c("T", "Tda", "Tdr", "A", "Arp","Atw", "Atl", "Ate", "Arp", "F", "S") # identify functional groups of interest - remove leaf litter and bare ground
 for(spp in specieslist) { # loops through species list
@@ -229,7 +226,7 @@ library(vegan)
 
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
 Spp_Env_matrix_HTH_WL=read.csv("Spp_Env_HTH_WL_Dec 2017.csv") # read data
-spp.matrix=Spp_Env_matrix_HTH_FP[,c(2:239)] # this is lazy coding so need to be careful it picks up all the species
+spp.matrix=Spp_Env_matrix_HTH_WL[,c(2:239)] # this is lazy coding so need to be careful it picks up all the species
 rownames(spp.matrix)=spp.matrix$Row.names
 spp.matrix=spp.matrix[,-c(1)]
 spp.matrix.pa=spp.matrix
