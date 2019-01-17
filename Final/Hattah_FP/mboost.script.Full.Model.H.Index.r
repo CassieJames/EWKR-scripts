@@ -83,8 +83,11 @@ abline(0,1)
 
 # SCRIPT FOR EXTRACTING RESIDUALS
 # create new data frame with residuals for plotting and also for use in t+1 - This is done on the entire dataset not the data split into training and testing datasets
-newdat <- cbind(daten$Site.ID, as.data.frame(residuals(Full.model))) # extract residuals
-newdat=cbind(newdat, data.matrix.env.data$Row.names)
+newdat <- cbind(daten$Site.ID, as.data.frame(predict(Full.model,type="response")-daten$Wet_Natives)) # extract residuals
+
+
+
+newdat=cbind(newdat, daten$Unique_site_year) # apend residuals to data
 colnames(newdat)=c("Site.ID", "resid", "Site.year")
 
 substrRight <- function(x, n){ # script to grab year off end of row names
@@ -144,7 +147,7 @@ daten_resid=cbind(daten,newdat[,c("newresid", "Row.names")])
 # Plot of residuals for each site
 
 png(paste(data.dir,'Full model_Abund_residuals_by year and site.png',sep=''), width=4500, height=3000, units="px", res=300)
-xyplot(residuals(Full.model) ~ newdat$year | newdat$Site.ID,
+xyplot(newdat$resid ~ newdat$year | newdat$Site.ID,
   panel=function(x, y){
     panel.xyplot(x, y)
     panel.loess(x, y, span = 0.75)
@@ -154,7 +157,7 @@ xyplot(residuals(Full.model) ~ newdat$year | newdat$Site.ID,
 dev.off()
 
 png(paste(data.dir,'Full model_residuals_by year.png',sep=''), width=1500, height=1000, units="px", res=300)
-xyplot(residuals(Full.model) ~ newdat$year ,
+xyplot(newdat$resid ~ newdat$year ,
   panel=function(x, y){
     panel.xyplot(x, y)
     panel.loess(x, y, span = 0.75)
@@ -244,7 +247,7 @@ bols(TSLF, intercept=FALSE)+bbs(TSLF, center=TRUE, df=1)+
 png(paste(image.dir,'H_index_fitted vs observed.png',sep=''), width=2000, height=1000, units="px", res=300)
 par(mfrow=c(1,2))
 par(mar=c(5,4,1,1))
-plot(fitted(Full.model),datenSmall$H_index, xlab='Fitted values', ylab='Observed values')
+plot(fitted(Full.model,type="response"),daten$Wet_Natives, xlab='Fitted values', ylab='Observed values')
 abline(0,1)
 plot(predict(Full.model,newdata=testdata),testdata$H_index, xlab='Predicted values', ylab='Observed values')
 abline(0,1)

@@ -1,14 +1,14 @@
 
 
 ##########################################################################################################
-### script to determine long term flood frequency for Hattah Lakes wetland sites
+### script to determine hydraulic info for Hattah Lakes wetland sites
 library(hydrostats)
 library(tidyr)
 library(ggplot2)
 
 # step 1 - upload all required data 
 
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
 Depth.dat=read.csv("Hattah_sites_time_series_data.csv", check.names=FALSE) # load hydrological information but prevent r form converting column names to a more 'friendly' format
 Depth_long <- gather(Depth.dat, site, depth, gather_cols=2:406, factor_key=TRUE) # had to use numbers for columns as function would not recognise names
 
@@ -20,15 +20,15 @@ Depth_long$DATE=as.Date(as.character(Depth_long$DATE), format = "%m/%d/%Y") # R 
 
 
 # Bring in wetland data
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_WL.csv"))
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+mydata=data.frame(read.csv("HTH_WL_FGcorrections.csv"))
 Sites_sampled <-unique(mydata[,c("Site.ID","Date.of.collection")]) # creates unique list of sites and dates sampled
 Sites_sampled$Date.of.collection<-as.Date(as.character(Sites_sampled$Date.of.collection), format = "%d/%m/%Y")
 Sites_sampled$Site.ID <- as.character(Sites_sampled$Site.ID)
 Hydro_Sites_Sampled=Sites_sampled
 Hydro_Sites_Sampled$DOD <-0 # Depth On Day of sampling
 
-for (i in 1:nrow(Sites_sampled)){ # f
+for (i in 1:nrow(Sites_sampled)){ # 
 soi=Sites_sampled[i,1]
 soi=ifelse(grepl("CCNT",soi),gsub("CCNT","NCT",soi),soi) # this adjusts for the differences in labels between the veg database and the location file sent by Cherie
 soi=ifelse(grepl("KRT",soi),gsub("KRT","KT",soi),soi) 
@@ -47,8 +47,12 @@ Depth.dat$DATE=as.Date(as.character(Depth.dat$DATE), format = "%m/%d/%Y")
 
 #########################################################################################################################
 #### Plots to look at long term depth records for wetlands and plots 
-plot.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/WL Hydrology plots/"
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
+Depth.dat=read.csv("Hattah_sites_time_series_data.csv", check.names=FALSE) # load hydrological information but prevent r form converting column
+Depth.dat$DATE=as.Date(as.character(Depth.dat$DATE), format = "%m/%d/%Y")
+
+plot.dir = "C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes hydrology/WL Hydrology plots/"
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
 obs.dat=read.csv("Inundation_obs.csv", check.names=FALSE) 
 colnames(obs.dat)[1]="site"
 
@@ -56,7 +60,7 @@ Sites=c("BIT1","BIT2","BIT3","BIT4", "BOT1","BOT2","BOT3","BRT1","BRT2","BRT3","
 "CHT3S","CHT2N","CHT4N","NCT1","NCT2","NCT3","NCT4", "HT1","HT2","HT3","HT4", "KT1","KT2","KT3","KT4", "LHT1","LHT2","LHT3",
  "LHT4","MOT1","MOT2","MOT3","MOT4", "NN1","NN2","NN3","NN4", "YT1","YT2","YT3","YT4")
 
-for (s in Sites) {
+#for (s in Sites) {
 
 Hattah.dat = as.data.frame(Depth.dat[,grepl(paste("^",s,sep=""), colnames(Depth.dat))])
 image_size=(ceiling((ncol(Hattah.dat))/3))*6.25 # adjusts height of image depending upon number of images
@@ -77,10 +81,14 @@ Hattah_long <- gather(Hattah.dat, site, depth, -Date, factor_key=TRUE)
 Hattah_long$site <-gsub("_.*", "", Hattah_long$site)
 Hattah_long$site<-sub("B$", '', Hattah_long$site)
 Hattah_long$site<-sub("A$", '', Hattah_long$site)
+Hattah_long$site<-as.factor(Hattah_long$site)
+Hattah_long$site<-as.factor(Hattah_long$site)
+Hattah_agg <- aggregate(Hattah_long$depth,  by = list(Hattah_long$site, Hattah_long$Date), mean)
+colnames(Hattah_agg) <-c("site", "Date", "Depth")
 
-png(paste(plot.dir,"/",s,"v2.png",sep=''),width=25, height=image_size, units='cm', res=300, pointsize=15, bg='white')
+png(paste(plot.dir,"/",s,"v3.png",sep=''),width=25, height=image_size, units='cm', res=300, pointsize=15, bg='white')
 
-plt<-ggplot(Hattah_long, aes(x = Date, y = depth)) + geom_area(color = "dodgerblue3", 
+plt<-ggplot(Hattah_agg, aes(x = Date, y = Depth)) + geom_area(color = "dodgerblue3", 
     fill = "dodgerblue3") + ylab("Height (m) ")+facet_wrap(~site,scales = "free_x", ncol=3)+scale_x_date(date_breaks = "1 year")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 plt<-plt+geom_point(mapping=aes(x=Date, y=-0.25),colour='red',data=NotInundated)+facet_wrap(~site,scales = "free_x", ncol=3)
 plt<-plt+geom_point(mapping=aes(x=Date, y=-0.25),colour='blue',data=Inundated)+facet_wrap(~site,scales = "free_x", ncol=3)

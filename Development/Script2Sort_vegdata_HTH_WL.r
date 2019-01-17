@@ -1,110 +1,195 @@
 # Script to turn data into a site by species matrix, determine species metrics and merge with environmental attributes
 # Written by  C.S.James 
 # GNU General Public License .. feel free to use / distribute ... no warranties
-# 29th July 2016
-
-# Import data
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_WL.csv"))
-mycodes=data.frame(read.csv("HL_FP_sp_codes.csv"))
-mydata=merge(mydata,mycodes,by.x="Scientific.name", by.y="Scientific.name", all.x=all)
-new_mydata<- mydata[is.na(mydata$sp_code),]
-species_without_codes=unique(new_mydata$Scientific.name)
-write.csv(species_without_codes , file = "Hattah WL species needing codes.csv") # save data out and sort out codes manually where required
-
-
+# 15th December 2017
 ###########################################################################################
 # This section creates a matrix with the environmental attributes tagged onto the end
 # load environmental data from various sources - this is messy because the predictor variables were/are in various locations and states
 
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_WL.csv"))
-mycodes=data.frame(read.csv("HL_sp_codes.csv"))
+#data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir)
+
+mydata=data.frame(read.csv("HTH_WL_FGcorrections.csv")) # functional group allocations corrected in veg database (some species had two different FG assignments)
+species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+mycodes=data.frame(read.csv("Master_Species_list.csv")) # this list has now been amended to include chowilla
+
 mydata=merge(mydata,mycodes,by="Scientific.name")
+mydata <- within(mydata, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are recognised as dates!
 
-data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/"; setwd(data.dir)
-Hydrodata=data.frame(read.csv("Flood_HTH_FP_pumps_corrected.csv")) # load corrected hydro data with duplicates and date errors removed
-Rainfall.dat=data.frame(read.csv("Rainfall_HTH_WL.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
-Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%d/%m/%Y")) # ensure dates are recognised in rainfall dat
-GIS.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/GIS stuff/"; setwd(GIS.dir)
-HTH_FP_locs=data.frame(read.csv("HTH_FP_locations.csv")) # load site longs and lats
+# correct site codes so they match environmental data :(
+mydata$Site.ID=gsub("CCNT","NCT",mydata$Site.ID) # this adjusts for the differences in labels between the veg database and the location file sent by Cherie - my attempt to make everything consistent
+mydata$Site.ID=gsub("KRT","KT",mydata$Site.ID)
+mydata$Unique_site_year=gsub("CCNT","NCT",mydata$Unique_site_year) # this adjusts for the differences in labels between the veg database and the location file sent by Cherie
+mydata$Unique_site_year=gsub("KRT","KT",mydata$Unique_site_year)
+
+# Import corrected dates (I corrected the original database for the FP but not the WL dataset - not sure why)
+#date.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/"; setwd (date.dir) 
+date.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/"; setwd (date.dir) 
+
+newdates=data.frame(read.csv("HTH_WL_dates_corrected.csv")) # note that in the original vegetation database the dates of collection were incorrect for a number of years
+newdates$Date.of.collection <- as.Date(newdates$Date.of.collection, format="%d/%m/%Y") 
+newdates$Unique_site_year=gsub("KRT","KT",newdates$Unique_site_year)
+newdates$Unique_site_year=gsub("CCNT","NCT",newdates$Unique_site_year)
+newdates=newdates[,c(1,3,4,5,6)]
+mydata2=merge(mydata, newdates, by="Unique_site_year" ) # 
+
+# assign season to dates
+
+library(zoo)
+      yq <- as.yearqtr(as.yearmon(mydata2$Date.of.collection.y , "%m/%d/%Y") + 1/12)
+      mydata2$Season <- factor(format(yq, "%q"), levels = 1:4, 
+      labels = c("SU", "AU", "WI", "SP"))
+
+
+mydata2$Unique_site_year_season = paste(mydata2$Unique_site_year,"_",mydata2$Season,sep="")
+
+#Hydrology
+#data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd(data.dir)
+data.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd(data.dir)
+Hydrodata=data.frame(read.csv("Flood_HTH_WL_pumps_corrected_60 day interval using RIMFIM CTFV2.csv")) # load corrected hydro data with duplicates and date errors removed (V2 is version where contradictions in 'inundation' have been corrected)
+Hydrodata$Unique_site_year=gsub("KRT","KT",Hydrodata$Unique_site_year)
+Hydrodata$Unique_site_year=gsub("CCNT","NCT",Hydrodata$Unique_site_year)
 Hydrodata=Hydrodata[!duplicated(Hydrodata), ] # remove duplicates
-mydata <- within(mydata, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are still recognised!
-Rainfall.dat=Rainfall.dat[!duplicated(Rainfall.dat), ] # remove duplicates
-mydata_env=merge(mydata, Rainfall.dat, by.x="Date.of.collection", by.y="Date") # merge species data with rainfall data by date to create a unique site-sample date by rainfall metrics table
-mydata_rainfall=mydata_env[,c("Unique_site_year", "d30", "d90", "d180", "d365")]
-mydata_rainfall=unique(mydata_rainfall)
-mydata_env=merge(mydata_rainfall, Hydrodata, by="Unique_site_year") # merge with hydrodata - I have used merge as this is safer in case the rows are not in the same order
-mydata_env=merge(mydata_env, HTH_FP_locs, by="Site.ID") # merge with location info
-wrc.data=mydata[,c("Site.ID", "WRC")]# extracts WRC and attributes to site
-wrc.data=wrc.data[!duplicated(wrc.data), ]
-mydata_env=merge(mydata_env, wrc.data, by="Site.ID") # merge with location info
+Hydrodata=Hydrodata[,c(3,6,8,19,20)] # tidy up and remove extra columns not needed
 
-data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes temperature/"; setwd(data.dir)
-Temperature.dat=data.frame(read.csv("Temperature_HTH_FP.csv")) # load temperature data which is already sorted into dates x rainfall metrics
+#Rainfall
+#data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes rainfall/"; setwd(data.dir)
+data.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes rainfall/"; setwd(data.dir)
+Rainfall.dat=data.frame(read.csv("Rainfall_HTH_WL.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
+Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%m/%d/%Y")) # ensure dates are recognised in rainfall dat
+Rainfall.dat=Rainfall.dat[!duplicated(Rainfall.dat), ] # remove duplicates
+Rainfall.dat=Rainfall.dat[,c(2:6)]
+
+#Temperature
+#data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes temperature/"; setwd(data.dir)
+data.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes temperature/"; setwd(data.dir)
+Temperature.dat=data.frame(read.csv("Temperature_HTH_WL.csv")) # load temperature data which is already sorted into dates x rainfall metrics
 Temperature.dat <- within(Temperature.dat, Date <- as.Date(as.character(Date), format = "%Y-%m-%d")) # ensure dates are recognised in rainfall dat
 Temperature.dat=Temperature.dat[,c(2:14)]
 Temperature.dat=Temperature.dat[!duplicated(Temperature.dat), ] # remove duplicates
-mydata_env <- within(mydata_env, Date.of.collection <- as.Date(as.character(Date.of.collection), format = "%d/%m/%Y")) # ensure dates are still recognised!
-mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection", by.y="Date") # merge 
- 
+
+#Veg overstorey structure and location
+#data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes veg structure/"; setwd(data.dir)
+data.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes veg structure/"; setwd(data.dir)
+VegStructure.dat=data.frame(read.csv("Hattah WL Veg Structure.csv")) # load veg structure data
+VegStructure.dat<-VegStructure.dat[,c(2,14)] 
+
+#Merge various datasets
+mydata_env=merge(mydata2, Rainfall.dat, by.x="Date.of.collection.y", by.y="Date", all.x=TRUE) # merge species data with rainfall data by date to create a unique site-sample date by rainfall metrics table
+mydata_env=merge(mydata_env, Hydrodata, by="Unique_site_year", all.x=TRUE) # I am not sure why but when I merge its duplicating selected lines of the database....
+mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection.y", by.y="Date",all.x=TRUE) # merge 
+mydata_env=merge(mydata_env, VegStructure.dat, by="Site.ID", all.x=TRUE) # merge  
+
+# Had to change some of the site codes as the Hattah lakes site codes are a subset of some of the Chalka creek and Little Hattah site codes so the matrix was filled in correctly
+mydata_env$Unique_site_year_season=gsub("CHT","CCS",mydata_env$Unique_site_year_season)
+mydata_env$Site.ID=gsub("CHT","CCS",mydata_env$Site.ID)
+mydata_env$Unique_site_year_season=gsub("LHT","LHAT",mydata_env$Unique_site_year_season)
+mydata_env$Site.ID=gsub("LHT","LHAT",mydata_env$Site.ID)
+mydata_env_OI=mydata_env[,c("Unique_site_year_season", "Inundated","d30", "d365", "Flood_frequency", "MaxTemp365", "MinTemp365","VEG_CLASS")] # subset to useful env data
+mydata_env_OI=mydata_env_OI[!duplicated(mydata_env_OI), ] # remove duplicates (I think I solved this so probably are not any more duplicates)
+
 # Create species x site matrix and tag on environmental data
-specieslist=unique(mydata$sp_code)
-sitelist=unique(mydata$Unique_site_year)
-takeout=c("Inundate", "Lea.litt", "Bar.grou")
+specieslist=unique(mydata_env$sp_code_simple)
+sitelist=unique(mydata_env$Unique_site_year_season)
+takeout=c("Inundate", "Lea.litt", "Bar.grou") # remove non species
 specieslist=specieslist[!specieslist %in% takeout]
-Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(specieslist))
-rownames(Output)=unique(mydata$Unique_site_year)
+Output= matrix(NA,nrow=length(unique(mydata2$Unique_site_year_season)), ncol=length(specieslist))
+rownames(Output)=sitelist
 colnames(Output)=sort(specieslist)
 Output=as.data.frame(Output)
-Output=merge(Output, mydata_env, by.x="row.names", by.y="Unique_site_year", all.x=TRUE) # add rainfall metrics to empty site x species matrix
 
 for(s in sitelist) { # Fill matrix
-tdata=mydata[which(mydata$Unique_site_year==s),]
-sitesp=unique(tdata$sp_code)
+tdata=mydata_env[which(mydata_env$Unique_site_year_season==s),]
+sitesp=NULL
+abund=NULL
+sitesp=unique(tdata$sp_code_simple)
 takeout=c("Inundate", "Lea.litt", "Bar.grou")
 sitesp=sitesp[!sitesp %in% takeout]
+
+if(length(sitesp)>0){
+s=as.character(s)
 for (spp in sitesp) {
-abund=max(tdata$Abundance[which(tdata$sp_code==spp)])
-Output[grep(s, Output$Row.names),grep(spp,colnames(Output))] <- abund
+abund=max(tdata$Abundance[which(tdata$sp_code_simple==spp)])
+Output[grep(s, rownames(Output), fixed=TRUE),grep(spp,colnames(Output), fixed=TRUE)] <- abund # needed fixed=TRUE to work
+}
 }
 }
 Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix
 
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+write.csv(Output , file = "Spp_site_year_transect matrix HTH_WL_June 2018.csv") # save data out
 
-Spp_Env_matrix_HTH_FP=Output # take a copy
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-write.csv(Spp_Env_matrix_HTH_FP , file = "Spp_Env_matrix_HTH_FP.csv") # save data out
+Spp_Env_HTH_WL=merge(Output,mydata_env_OI ,by.x="row.names", by.y="Unique_site_year_season") # merge 
+
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+write.csv(Spp_Env_HTH_WL , file = "Spp_Env_HTH_WL_June 2018.csv") # save data out
+
+###########################################################################################
+## Script to aggregate data to wetland and year
+
+wetlist=c("BIT","BLT", "BOT", "BRT", "CCS", "HT", "KT", "LHAT", "MOT", "NCT", "NN", "YT")
+yoi=c("_08", "_09","_10","_11", "_12", "_13", "_14", "_16")
+tt = expand.grid(wetlist,yoi); tt = paste(tt[,1],tt[,2],sep="")
+
+tada = matrix(NA,nrow=length(tt),ncol=ncol(Output))#define the output matrix
+rownames(tada)=tt
+colnames(tada)=colnames(Output)
+
+for(w in wetlist) { # 
+tdata=Output[grep(w,rownames(Output)),]
+
+for (yy in yoi) {
+ttdata=tdata[grep(yy,rownames(tdata)),]
+maxabund=nrow(ttdata)*15
+out=colSums(ttdata)
+tada[grep(paste(w,yy,sep=""),rownames(tada)),] = out
+}
+
+}
+
+tada=tada[rowSums(tada!= 0) > 0,]	# remove sites with no records (e.g. BIT was not sampled until 2013 so there is no data for 2008-2012)
+tada<-tada[complete.cases(tada), ]
+
+#data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir)
+write.csv(tada , file = "Spp_site_matrix summarised to wetland_HTH_WL_June 2018.csv") # save data out
+
+###########################################################################################
+## Script to aggregate data to wetland and year and season
+
+wetlist=c("BIT","BLT", "BOT", "BRT", "CCS", "HT", "KT", "LHAT", "MOT", "NCT", "NN", "YT")
+yoi=c("_08", "_09","_10","_11", "_12", "_13", "_14", "_16")
+season=c("_SU", "_AU","_WI","_SP")
+
+tt = expand.grid(wetlist,yoi,season); tt = paste(tt[,1],tt[,2],tt[,3],sep="")
+
+tada = matrix(NA,nrow=length(tt),ncol=ncol(Output))#define the output matrix
+rownames(tada)=tt
+colnames(tada)=colnames(Output)
+
+for(w in wetlist) { # 
+tdata=Output[grep(w,rownames(Output)),]
+
+for (yy in yoi) {
+ttdata=tdata[grep(yy,rownames(tdata)),]
+
+for (seas in season){
+tttdata=ttdata[grep(seas,rownames(ttdata)),]
+maxabund=nrow(tttdata)*15
+out=colSums(tttdata)
+tada[grep(paste(w,yy,seas,sep=""),rownames(tada)),] = out
+}}}
+
+tada=tada[rowSums(tada!= 0) > 0,]	# remove sites with no records (e.g. BIT was not sampled until 2013 so there is no data for 2008-2012)
+tada<-tada[complete.cases(tada), ]
+
+#data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir)
+write.csv(tada , file = "Spp_site_year_season matrix HTH_WL_July 2018.csv") # save data out
 
 ###########################################################################################
 #Scripts to calculate various vegetation metrics
-
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-mydata=data.frame(read.csv("HTH_FP.csv"))
-mycodes=data.frame(read.csv("HL_FP_sp_codes.csv"))
-mydata=merge(mydata,mycodes,by.x="Scientific_name", by.y="Scientific.name")
-
-#create matrix for results (species x sites)
-specieslist=unique(mydata$sp_code)
-sitelist=unique(mydata$Unique_site_year)
-takeout=c("Inundate", "Lea.litt", "Bar.grou")
-specieslist=specieslist[!specieslist %in% takeout]
-sitelist=unique(mydata$Unique_site_year)
-Output= matrix(NA,nrow=length(unique(mydata$Unique_site_year)), ncol=length(specieslist))
-rownames(Output)=unique(mydata$Unique_site_year)
-colnames(Output)=sort(specieslist)
-
-for(s in sitelist) {
-tdata=mydata[which(mydata$Unique_site_year==s),]
-sitesp=unique(tdata$sp_code)
-takeout=c("Inundate", "Lea.litt", "Bar.grou")
-sitesp=sitesp[!sitesp %in% takeout]
-for (spp in sitesp) {
-abund=max(tdata$Abundance[which(tdata$sp_code==spp)])
-Output[grep(s, rownames(Output)),grep(spp,colnames(Output))] <- abund
-}
-}
-Output[is.na(Output)] <- 0
 
 ######## Exotic metrics ########
 # Determine proportion of occurrences that are exotic species
@@ -115,7 +200,7 @@ Outputt=as.data.frame(Outputt)
 Outputt$Exotic <- NA # create an empty column for the exotic status to fill
 
 for(spp in specieslist) { # loops through species list
-exotic.status=unique(mydata[mydata$sp_code==spp,c("Weed")]) # extract weed status from original mydata frame
+exotic.status=unique(mydata[mydata$sp_code==spp,c("Weed.status")]) # extract weed status from original mydata frame
 Outputt[agrep(spp, rownames(Outputt)),"Exotic"] <- exotic.status} # agrep gives a lazy match - it seems to work where the exact match was falling over for a couple of species - although why I don't know :(
 
 exotic=colSums(Outputt[which(Outputt$Exotic==2),]) # sum all rows for each column for which the species is exotic
@@ -161,6 +246,7 @@ Arp=colSums(Outputt[which(Outputt$Arp==1),])
 F=colSums(Outputt[which(Outputt$F==1),])
 S=colSums(Outputt[which(Outputt$S==1),])
 
+# rem the above code has also summed the functional group designation columns!
 
 ttdata=rbind(T,Tdr) # lazy binding!
 ttdata=rbind(ttdata,Tda)
@@ -177,15 +263,15 @@ REMOVE=c("Exotic")
 tdata=tdata[!rownames(tdata) %in% REMOVE, ] # remove exotic row from bottom of data frame
 ttdata=t(ttdata)
 ttdata=ttdata[!rownames(ttdata) %in% FGs, ] # remove functional rows from bottom of data frame
-Final_metrics=merge(tdata,ttdata,by='row.names')
 
-######## H index and species richness ########
-# Diversity metric calculated to do trial analysis as it has quite a simple distribution (gaussian)
+
+####### H index and species richness ########
+
 library(vegan)
 
 data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-Spp_Env_matrix_HTH_FP=read.csv("Spp_Env_matrix_HTH_FP.csv") # read data
-spp.matrix=Spp_Env_matrix_HTH_FP[,c(2:267)]
+Spp_Env_matrix_HTH_WL=read.csv("Spp_Env_HTH_WL_Dec 2017.csv") # read data
+spp.matrix=Spp_Env_matrix_HTH_WL[,c(2:239)] # this is lazy coding so need to be careful it picks up all the species
 rownames(spp.matrix)=spp.matrix$Row.names
 spp.matrix=spp.matrix[,-c(1)]
 spp.matrix.pa=spp.matrix
@@ -197,22 +283,26 @@ colnames(H.index)=c("H_index")
 
 ###### Merge metrics with environmental data and save out for analysis
 
-Final_Hattah_FP=merge(Final_metrics, H.index, by.x="Row.names", by.y="row.names", all.x=TRUE) #
-Final_Hattah_FP=merge(Final_Hattah_FP, Richness, by.x="Row.names", by.y="row.names", all.x=TRUE) #
-Final_Hattah_FP=merge(Final_Hattah_FP, mydata_env, by.x="Row.names", by.y="Unique_site_year", all.x=TRUE) #
-write.csv(Final_Hattah_FP , file = "Final_Metrics_Hattah_FP_with rich.csv") # save data out
+Final_Hattah_WL=merge(tdata, ttdata, by.x="row.names", by.y="row.names", all.x=TRUE) #
+Final_Hattah_WL=merge(Final_Hattah_WL, H.index, by.x="Row.names", by.y="row.names", all.x=TRUE) #
+Final_Hattah_WL=merge(Final_Hattah_WL, Richness, by.x="Row.names", by.y="row.names", all.x=TRUE) #
+Final_Hattah_WL=merge(Final_Hattah_WL, mydata_env_OI, by.x="Row.names", by.y="Unique_site_year", all.x=TRUE) # merge with restricted enviro data with duplicates removed
+write.csv(Final_Hattah_WL , file = "Final_Metrics_HTH_WL.csv") # save data out
 
 ###### Some basic plots of the responses
 
-envdata=read.csv("Final_Metrics_Hattah_FP_with rich.csv") # load data with corrections to diversity, richness and abundance
-envdata$Terrestrial=envdata$T+envdata$Tda+envdata$Tdr
+envdata=read.csv("Final_Metrics_HTH_WL.csv") 
+envdata$Terrestrial=envdata$T+envdata$Tda+envdata$Tdr # Here I have just grouped the functional groups into coarser categories
 envdata$Aquatic=envdata$A+envdata$Atw+envdata$Atl+envdata$Ate+envdata$Arp+envdata$F+envdata$S
 envdata$Aquatic_prop =(envdata$Aquatic/(envdata$Terrestrial+envdata$Aquatic))*100
 envdata$Terrestrial_prop =(envdata$Terrestrial/(envdata$Terrestrial+envdata$Aquatic))*100
 envdata$Total_abund=envdata$Terrestrial+envdata$Aquatic
 
+library(ggplot2)
+library(gridExtra)
+image.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Plots/"
 
-png(paste(image.dir,'Response Metrics hists.png',sep=''), width=1500, height=1500, units="px", res=200)
+png(paste(image.dir,'Response Metrics hists WL.png',sep=''), width=1500, height=1500, units="px", res=200)
 
 prich <- ggplot(as.data.frame(envdata$Richness), aes(x=envdata$Richness),xlab="Richness")+ geom_histogram(bins=20)
 prich <- prich + geom_histogram(bins=20) + labs(x="Richness", y="Count")

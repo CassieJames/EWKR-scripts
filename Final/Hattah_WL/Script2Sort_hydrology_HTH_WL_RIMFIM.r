@@ -4,11 +4,11 @@ library(hydrostats)
 
 # step 1 - upload all required data (hydrology record from Euston, CTF data and samples dates)
 
-data.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Euston flow data/"; setwd(data.dir)
+data.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Euston flow data/"; setwd(data.dir)
 
 Euston_discharge<-data.frame(read.csv(file="MeanWaterFlow_Euston.csv"))
 Euston_discharge$Date <- as.Date(Euston_discharge$Date, format="%d/%m/%Y") 
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) # set working directory
 Flood.dat=data.frame(read.csv("HWL_FLOOD_DAT_Dec2017.csv")) # load hydrological information
 Flood.dat$Y2005_Early <- as.Date(Flood.dat$Y2005_Early, format="%d/%m/%Y") 
 Flood.dat$Y2005_Late <- as.Date(Flood.dat$Y2005_Late, format="%d/%m/%Y") 
@@ -24,14 +24,14 @@ Flood.dat$Site.ID=gsub("KRT","KT",Flood.dat$Site.ID)
 Flood.dat$Site.ID=gsub("CCNT","NCT",Flood.dat$Site.ID)
 
 
-data.dir = "C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("HTH_WL.csv"))
 mydata$Site.ID=gsub("CCNT","NCT",mydata$Site.ID) # this adjusts for the differences in labels between the veg database and the location file sent by Cherie - my attempt to make everything consistent
 mydata$Site.ID=gsub("KRT","KT",mydata$Site.ID)
 mydata$Unique_site_year=gsub("CCNT","NCT",mydata$Unique_site_year) # this adjusts for the differences in labels between the veg database and the location file sent by Cherie
 mydata$Unique_site_year=gsub("KRT","KT",mydata$Unique_site_year)
 
-date.dir="C:/Users/jc246980/Documents/Documents (2)/Current projects/MD Vegetation/Environmental data/"; setwd (date.dir) 
+date.dir="C:/Users/jc246980/Documents/MD Vegetation/Environmental data/"; setwd (date.dir) 
 newdates=data.frame(read.csv("HTH_WL_dates_corrected.csv")) # note that in the original vegetation database the dates of collection were incorrect for a number of years
 newdates$Date.of.collection <- as.Date(newdates$Date.of.collection, format="%d/%m/%Y") 
 newdates$Unique_site_year=gsub("KRT","KT",newdates$Unique_site_year)
