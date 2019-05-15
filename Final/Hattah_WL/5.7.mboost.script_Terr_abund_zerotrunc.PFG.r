@@ -32,20 +32,27 @@ lines(fitD, lwd="3", col="blue")
 
 ###########################################################################################################################
 # I explored including previous vegetation abundance (T-1) as potential predictor in current year (T)
-#sitelist=unique(envdata$Site.ID.x)
-#envdata$Terr_Natives_T1 <-NA
-#for(s in sitelist) { # loop through each site - because some sites don't have year 4 I have had to create two sets of rules
-#mydata=envdata[which(envdata$Site.ID.x==s),]
-#yoi=unique(mydata$WaterYr)
-#yoi=yoi[yoi != "2016"]
-#for(y in yoi){
-#if(y==yoi[1]) next # if y is the first year of the list then skip 
-#envdata[which(envdata$WaterYr==y & envdata$Site.ID.x==s),c("Terr_Natives_T1")]<-envdata[which(envdata$WaterYr==y-1& envdata$Site.ID.x==s),c("Terr_Natives")]
-#}
+sitelist=unique(envdata$Site.ID.x)
+envdata$Terr_Natives_T1 <-NA
+
+for(s in sitelist) { # loop through each site - because some sites don't have year 4 I have had to create two sets of rules
+
+mydata=envdata[which(envdata$Site.ID.x==s),]
+
+yoi=unique(mydata$WaterYr)
+yoi=yoi[yoi != "2016"]
+
+for(y in yoi){
+
+if(y==yoi[1]) next # if y is the first year of the list then skip 
+envdata[which(envdata$WaterYr==y & envdata$Site.ID.x==s),c("Terr_Natives_T1")]<-envdata[which(envdata$WaterYr==y-1& envdata$Site.ID.x==s),c("Terr_Natives")]
+}
+
 # Do 2016 separately as will have to use 2014 result as predictor as no 2015 data
-#envdata[which(envdata$WaterYr==2016 & envdata$Site.ID.x==s),c("Terr_Natives_T1")]<-envdata[which(envdata$WaterYr==2014 & envdata$Site.ID.x==s),c("Terr_Natives")]
-#}
-#envdata=envdata[!is.na(envdata$Terr_Natives_T1),] # remove sites where there is no T-1 data
+envdata[which(envdata$WaterYr==2016 & envdata$Site.ID.x==s),c("Terr_Natives_T1")]<-envdata[which(envdata$WaterYr==2014 & envdata$Site.ID.x==s),c("Terr_Natives")]
+}
+
+envdata=envdata[!is.na(envdata$Terr_Natives_T1),] # remove sites where there is no T-1 data
 
 ###########################################################################################################################
 # Sort out environmental data - centering is strongly recommended for this method
@@ -94,8 +101,9 @@ envdata$Terr_Natives_T1=as.numeric(scale((envdata$Terr_Natives_T1),center=TRUE, 
 ###########################################################################################################################				
 # Candidate model formulas
 
-dfd=1 # set degrees of freedom to 1
+dfd=1 # set degrees of freedom to 3
 
+form_legacy <- Terr_Natives~bols(Terr_Natives_T1, intercept=FALSE)+bbs(Terr_Natives_T1, center=TRUE, df=dfd)+bols(interc,intercept=FALSE)
 
 
 form_spatial <- Terr_Natives~ bspatial(Easting, Northing, knots = 6, boundary.knots=NULL,df=dfd,center=TRUE,differences=1)+
@@ -188,7 +196,34 @@ form_tree_spatial <- Terr_Natives~bspatial(Easting, Northing, knots = 6, boundar
 form_tree       <- Terr_Natives~
 				btree(TSLW,FF,d3Mon_wet,d3Mon_meandepth,d1yrs_wet,d1yrs_meandepth,d3yrs_wet,d3yrs_meandepth,Freq_d1,Freq_d3,d90,d365,MeanTemp90,MinTemp90,MaxTemp90,tree_controls=tctrl)+
 				bols(interc,intercept=FALSE)
-
+				
+form_covary_interact <- 	Terr_Natives~
+				bols(TSLW, intercept=FALSE)+bbs(TSLW, center=TRUE, df=dfd)+
+				bols(FF, intercept=FALSE)+bbs(FF, center=TRUE, df=dfd)+
+				bols(d3Mon_wet, intercept=FALSE)+bbs(d3Mon_wet, center=TRUE, df=dfd)+
+				bols(d3Mon_meandepth, intercept=FALSE)+bbs(d3Mon_meandepth, center=TRUE, df=dfd)+
+				bols(d1yrs_wet, intercept=FALSE)+bbs(d1yrs_wet, center=TRUE, df=dfd)+
+				bols(d1yrs_meandepth, intercept=FALSE)+bbs(d1yrs_meandepth, center=TRUE, df=dfd)+
+				bols(d3yrs_wet, intercept=FALSE)+bbs(d3yrs_wet, center=TRUE, df=dfd)+
+				bols(d3yrs_meandepth, intercept=FALSE)+bbs(d3yrs_meandepth, center=TRUE, df=dfd)+
+				bols(Freq_d1, intercept=FALSE)+bbs(Freq_d1, center=TRUE, df=dfd)+
+				bols(Freq_d3, intercept=FALSE)+bbs(Freq_d3, center=TRUE, df=dfd)+
+				bols(d90, intercept=FALSE)+bbs(d90, center=TRUE, df=dfd)+
+				bols(d365, intercept=FALSE)+bbs(d365, center=TRUE, df=dfd)+
+				bols(MeanTemp90, intercept=FALSE)+bbs(MeanTemp90, center=TRUE, df=dfd)+
+				bols(MinTemp90, intercept=FALSE)+bbs(MinTemp90, center=TRUE, df=dfd)+
+				bols(MaxTemp90, intercept=FALSE)+bbs(MaxTemp90, center=TRUE, df=dfd)+
+				bols(interc,intercept=FALSE)+
+				bbs(Freq_d3, by = FF,center=TRUE, df=dfd)+
+				bbs(d90, by = d3yrs_meandepth,center=TRUE, df=dfd)+
+				bbs(Freq_d3, by = d3Mon_meandepth,center=TRUE, df=dfd)+
+				bbs(MeanTemp90, by = d3Mon_meandepth,center=TRUE, df=dfd)+
+				bbs(Freq_d3, by = d3Mon_wet,center=TRUE, df=dfd)+
+				bbs(d3Mon_meandepth, by = FF,center=TRUE, df=dfd)+
+				bbs(MeanTemp90, by = TSLW,center=TRUE, df=dfd)+
+				bbs(d3yrs_meandepth, by = TSLW,center=TRUE, df=dfd)+
+				bbs(d3yrs_wet, by = d3Mon_meandepth,center=TRUE, df=dfd)+
+				bbs(d3Mon_wet, by = FF,center=TRUE, df=dfd)
 				
 				
 ###########################################################################################################################
@@ -196,36 +231,20 @@ form_tree       <- Terr_Natives~
 
 daten=envdata
 
-#Model_legacy_Terr_Natives <-mboost(form_legacy,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_spatial_Terr_Natives <-mboost(form_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_covary_Terr_Natives <-gamboost(form_covary,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_covary_climate_Terr_Natives<-gamboost(form_covary_climate,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_covary_flow_Terr_Natives<-gamboost(form_covary_flow,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_covary_spatial_Terr_Natives <-gamboost(form_covary_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_tree_spatial_Terr_Natives <-mboost(form_tree_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.01)) # 
-Model_tree_Terr_Natives <-mboost(form_tree,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.01)) # 
-Model_covary_interact_Terr_Natives <-gamboost(form_covary_interact,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # 
-
-# try with zero trucated data as above models are terrible
-
-
-Model_legacy_Terr_Natives <-mboost(form_legacy,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_spatial_Terr_Natives <-mboost(form_spatial,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_covary_Terr_Natives <-gamboost(form_covary,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_covary_climate_Terr_Natives<-gamboost(form_covary_climate,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_covary_flow_Terr_Natives<-gamboost(form_covary_flow,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_covary_spatial_Terr_Natives <-gamboost(form_covary_spatial,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_tree_spatial_Terr_Natives <-mboost(form_tree_spatial,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.01)) # 
-Model_tree_Terr_Natives <-mboost(form_tree,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.01)) # 
-Model_covary_interact_Terr_Natives <-gamboost(form_covary_interact,family = MBztnegbin(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # 
+Model_legacy_Terr_Natives <-mboost(form_legacy,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.005)) # orig
+Model_spatial_Terr_Natives <-mboost(form_spatial,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.005)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
+Model_covary_Terr_Natives <-gamboost(form_covary,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.005)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
+Model_covary_climate_Terr_Natives<-gamboost(form_covary_climate,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.1)) # orig
+Model_covary_flow_Terr_Natives<-gamboost(form_covary_flow,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.1)) # orig
+Model_covary_spatial_Terr_Natives <-gamboost(form_covary_spatial,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.1)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
+Model_tree_spatial_Terr_Natives <-mboost(form_tree_spatial,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.1)) # 
+Model_tree_Terr_Natives <-mboost(form_tree,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.1)) # 
+Model_covary_interact_Terr_Natives <-gamboost(form_covary_interact,family = Hurdle(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.1)) # 
 
 
 
-
-
-
-#cv5f <- cv(model.weights(Model_legacy_Terr_Natives), type='subsampling', B=25)
-#cv_legacy_Terr_Natives <- cvrisk(Model_legacy_Terr_Natives, folds=cv5f)
+cv5f <- cv(model.weights(Model_legacy_Terr_Natives), type='subsampling', B=25)
+cv_legacy_Terr_Natives <- cvrisk(Model_legacy_Terr_Natives, folds=cv5f)
 
 cv5f <- cv(model.weights(Model_spatial_Terr_Natives), type='subsampling', B=25)
 cv_spatial_Terr_Natives <- cvrisk(Model_spatial_Terr_Natives, folds=cv5f)
@@ -251,8 +270,8 @@ cv_tree_Terr_Natives<- cvrisk(Model_tree_Terr_Natives, folds=cv5f)
 cv5f <- cv(model.weights(Model_covary_interact_Terr_Natives), type='subsampling', B=25)
 cv_interact_Terr_Natives<- cvrisk(Model_covary_interact_Terr_Natives, folds=cv5f)
 
-#st<-(mstop(cv_legacy_Terr_Natives))
-#Model_legacy_Terr_Natives[st]
+st<-(mstop(cv_legacy_Terr_Natives))
+Model_legacy_Terr_Natives[st]
 
 st<-(mstop(cv_spatial_Terr_Natives))
 Model_spatial_Terr_Natives[st]
@@ -314,42 +333,42 @@ library(rlist)
 
 extrb <- function(obj, m = mstop(obj))
     obj[, attr(obj, "mstop") == m]
-nm <- c("(Spatial)", "(Climate+Hydro)","(Climate)","(Hydro)", "(Climate+Hydro+Spatial)","(Tree)","(Tree+Spatial)")
-tmp.abund.terr <- data.frame(cv = c(extrb(cv_spatial_Terr_Natives), extrb(cv_covar_Terr_Natives), extrb(cv_covar_climate_Terr_Natives),extrb(cv_covar_flow_Terr_Natives),extrb(cv_covarspatial_Terr_Natives),
+nm <- c("(Legacy)","(Spatial)", "(Climate+Hydro)","(Climate)","(Hydro)", "(Climate+Hydro+Spatial)","(Tree)","(Tree+Spatial)")
+tmp.abund.terr.hurdle <- data.frame(cv = c(extrb(cv_legacy_Terr_Natives),extrb(cv_spatial_Terr_Natives), extrb(cv_covar_Terr_Natives), extrb(cv_covar_climate_Terr_Natives),extrb(cv_covar_flow_Terr_Natives),extrb(cv_covarspatial_Terr_Natives),
 				 extrb(cv_tree_Terr_Natives),extrb(cv_tree_spatial_Terr_Natives)),
-				model = gl(7, length(extrb(cv_spatial_Terr_Natives))),b = factor(rep(1:length(extrb(cv_spatial_Terr_Natives)), 7)))
+				model = gl(8, length(extrb(cv_spatial_Terr_Natives))),b = factor(rep(1:length(extrb(cv_spatial_Terr_Natives)), 8)))
 				  
 
-levels(tmp.abund.terr$model) <- nm
+levels(tmp.abund.terr.hurdle$model) <- nm
 
-save(tmp.abund.terr,file="c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/tmp.abund.terr.RData")
+save(tmp.abund.terr.hurdle,file="c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/tmp.abund.terr.hurdle.RData")
 
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/tmp.abund.terr.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/tmp.abund.terr.hurdle.RData")
 
-png("Terr_Natives NegLL comparing different models May 2019.png",width=25, height=25, units='cm', res=300, pointsize=20, bg='white')
+png("Terr_Natives NegLL comparing different models df1 hurdle.png",width=25, height=25, units='cm', res=300, pointsize=20, bg='white')
         par(mar=c(5,4,1,1),cex=1,oma=c(3,2,1,1))
 		
-boxplot(cv ~  model, data = tmp.abund.terr, axes = FALSE,
+boxplot(cv ~  model, data = tmp.abund.terr.hurdle, axes = FALSE,
         ylab = "Out-of bootstrap neg. log-lik", xlab = "")
 		axis(1, at = 1:7
 		, label = FALSE, tick = FALSE, las = 3, cex.axis = 0.75)
-		text(seq_along(levels(tmp.abund.terr$model)), par("usr")[3] - 0.008,srt = 30, adj = 1, label = levels(tmp.abund.terr$model), xpd = TRUE, font = 1, cex=0.7)
+		text(seq_along(levels(tmp.abund.terr.hurdle$model)), par("usr")[3] - 0.008,srt = 30, adj = 1, label = levels(tmp.abund.terr.hurdle$model), xpd = TRUE, font = 1, cex=0.7)
 		axis(2)
-		out <- tapply(1:nrow(tmp.abund.terr), tmp.abund.terr$b, function(x) lines(1:7, tmp.abund.terr[x,"cv"], col = rgb(0,0,0,0.1)))
+		out <- tapply(1:nrow(tmp.abund.terr.hurdle), tmp.abund.terr.hurdle$b, function(x) lines(1:8, tmp.abund.terr.hurdle[x,"cv"], col = rgb(0,0,0,0.1)))
 		box(which = "plot", lty = "solid")
 
 dev.off()
 
 # Formal model comparison
-sgmod_Terr_Natives <- summary(glht(lmer(cv ~ model + (1 | b), data = tmp.abund.terr), mcp(model = "Tukey")))
-save(sgmod_Terr_Natives, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sgmod_Terr_Natives.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sgmod_Terr_Natives.RData")
+sgmod_Terr_Natives.hurdle <- summary(glht(lmer(cv ~ model + (1 | b), data = tmp.abund.terr.hurdle), mcp(model = "Tukey")))
+save(sgmod_Terr_Natives.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sgmod_Terr_Natives.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sgmod_Terr_Natives.hurdle.RData")
 
 # stability selection of important parameters in best model
-sel_Terr_Natives <- stabsel(Model_covary_flow_Terr_Natives,cutoff=0.75, q = 5)
-save(sel_Terr_Natives, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sel_Terr_Natives.RData")
+sel_Terr_Natives.hurdle <- stabsel(Model_covary_flow_Terr_Natives,cutoff=0.75, q = 5)
+save(sel_Terr_Natives.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sel_Terr_Natives.hurdle.RData")
 
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sel_Terr_Natives.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sel_Terr_Natives.hurdle.RData")
 
 # Pseudo r2 but see below for resampled estimates
 
@@ -358,41 +377,6 @@ load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/sel
 		n <- length(y)
 		r2 <- ( 1 - exp( - 2/n * (logLik(Model_covary_flow_Terr_Natives_final) - logLik(m1)) ) ) / ( 1 - exp(logLik(m1))^{2/n})
 	
-###########################################################################################################################
-# Evaluation of different models using multiplicity adjusted all-pairwise comparisons - INTERACTIONS included
-
-library(multcomp)
-library(lme4)
-library(rlist)
-
-extrb <- function(obj, m = mstop(obj))
-    obj[, attr(obj, "mstop") == m]
-nm <- c("(Spatial)", "(Climate+Hydro)","(Climate)","(Hydro)", "(Climate+Hydro+Spatial)","(Tree)","(Tree+Spatial)")
-tmp.abund.terr.interact <- data.frame(cv = c(extrb(cv_legacy_Terr_Natives),extrb(cv_spatial_Terr_Natives), extrb(cv_covar_Terr_Natives), extrb(cv_covar_climate_Terr_Natives),extrb(cv_covar_flow_Terr_Natives),extrb(cv_covarspatial_Terr_Natives),
-				 extrb(cv_tree_Terr_Natives),extrb(cv_tree_spatial_Terr_Natives),extrb(cv_interact_Terr_Natives)),
-				model = gl(7, length(extrb(cv_spatial_Terr_Natives))),b = factor(rep(1:length(extrb(cv_spatial_Terr_Natives)), 7)))
-				  
-
-levels(tmp.abund.terr.interact$model) <- nm
-
-save(tmp.abund.terr.interact,file="c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/tmp.abund.terr.interact.RData")
-
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/tmp.abund.terr.interact.RData")
-
-png("Terr_Natives NegLL comparing different models interact.png",width=25, height=25, units='cm', res=300, pointsize=20, bg='white')
-        par(mar=c(5,4,1,1),cex=1,oma=c(3,2,1,1))
-		
-boxplot(cv ~  model, data = tmp.abund.terr.interact, axes = FALSE,
-        ylab = "Out-of bootstrap neg. log-lik", xlab = "")
-		axis(1, at = 1:7
-		, label = FALSE, tick = FALSE, las = 3, cex.axis = 0.75)
-		text(seq_along(levels(tmp.abund.terr.interact$model)), par("usr")[3] - 0.008,srt = 30, adj = 1, label = levels(tmp.abund.terr.interact$model), xpd = TRUE, font = 1, cex=0.7)
-		axis(2)
-		out <- tapply(1:nrow(tmp.abund.terr.interact), tmp.abund.terr.interact$b, function(x) lines(1:9, tmp.abund.terr.interact[x,"cv"], col = rgb(0,0,0,0.1)))
-		box(which = "plot", lty = "solid")
-
-dev.off()	
-
 		
 ############################################################################################################################################################
 # Evaluate fit of the 'best' model
@@ -400,12 +384,12 @@ dev.off()
 datenSmall=daten # create copy of data
 n=nrow(datenSmall)
 set.seed(806)
-predicted.in.terr <- list()
-model.coefs.terr <-list()
-datenSmall.terr <-list()
-extracts.terr.TSLW <-list()
-extracts.terr.d3Mon_meandepth <-list()
-extracts.terr.d3Mon_wet <-list()
+predicted.in.terr.hurdle <- list()
+model.coefs.terr.hurdle <-list()
+datenSmall.terr.hurdle <-list()
+extracts.terr.TSLW.hurdle <-list()
+extracts.terr.d3Mon_meandepth.hurdle <-list()
+extracts.terr.d3Mon_wet.hurdle <-list()
 
 N = 100 # this will be raised but kept to a minimum atm
 
@@ -425,41 +409,41 @@ datenSmall <- daten[indvecL,][1:(n/2),] # subset to half data for test run
 		st<-(mstop(cv_covary_flow_Terr_Natives.test))
 		Model_covary_flow_Terr_Natives.test[st]
 		mycoefs= coef(Model_covary_flow_Terr_Natives.test) # store each model run coefficients incase we want to plot partial dependency plots for each test run to estimate ci
-		model.coefs.terr[[i]] = mycoefs # store coeffcients of each validation run
-		datenSmall.terr[[i]]= datenSmall # store actual data from each validation run
-		extracts.terr.TSLW[[i]]=extract(Model_covary_flow_Terr_Natives.test,which="TSLW")
-		extracts.terr.d3Mon_meandepth[[i]]=extract(Model_covary_flow_Terr_Natives.test,which="d3Mon_meandepth")
-		extracts.terr.d3Mon_wet[[i]]=extract(Model_covary_flow_Terr_Natives.test, which="d3Mon_wet")
+		model.coefs.terr.hurdle[[i]] = mycoefs # store coeffcients of each validation run
+		datenSmall.terr.hurdle[[i]]= datenSmall # store actual data from each validation run
+		extracts.terr.TSLW.hurdle[[i]]=extract(Model_covary_flow_Terr_Natives.test,which="TSLW")
+		extracts.terr.d3Mon_meandepth.hurdle[[i]]=extract(Model_covary_flow_Terr_Natives.test,which="d3Mon_meandepth")
+		extracts.terr.d3Mon_wet.hurdle[[i]]=extract(Model_covary_flow_Terr_Natives.test, which="d3Mon_wet")
 #### goodness of fit in-bootstrap
 		m1 <- glm.nb(Terr_Natives ~ 1, data=datenSmall) # null model	
 		y <- datenSmall$Terr_Natives
 		n.y <- length(y)
 		r2 <- ( 1 - exp( - 2/n.y * (logLik(Model_covary_flow_Terr_Natives.test) - logLik(m1)) ) ) / ( 1 - exp(logLik(m1))^{2/n.y})
-		predicted.in.terr[[i]] = r2
+		predicted.in.terr.hurdle[[i]] = r2
 }
 		
-r2.data=list.rbind(predicted.in.terr)
+r2.data=list.rbind(predicted.in.terr.hurdle)
 mean(r2.data)
 quantile(r2.data, c(.1, .5, .9)) 
 
-save(predicted.in.terr, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/predicted.in.terr.RData")
-save(model.coefs.terr, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/“model.coefs.terr.RData")
-save(extracts.terr.TSLW, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.TSLW.RData")
-save(extracts.terr.d3Mon_meandepth, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_meandepth.RData")
-save(extracts.terr.d3Mon_wet, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_wet.RData")
-save(datenSmall.terr, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/datenSmall.terr.RData") 
+save(predicted.in.terr.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/predicted.in.terr.RData")
+save(model.coefs.terr.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/“model.coefs.terr.RData")
+save(extracts.terr.TSLW.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.TSLW.RData")
+save(extracts.terr.d3Mon_meandepth.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_meandepth.RData")
+save(extracts.terr.d3Mon_wet.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_wet.RData")
+save(datenSmall.terr.hurdle, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/datenSmall.terr.RData") 
 
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/predicted.in.terr.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/“model.coefs.terr.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.TSLW.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_meandepth.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_wet.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/datenSmall.terr.RData") 
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/predicted.in.terr.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/“model.coefs.terr.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.TSLW.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_meandepth.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.d3Mon_wet.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/datenSmall.terr.hurdle.RData") 
 
 ############################################################################################################################################################
 # Modelled versus observed
 
-png("Terr_Natives predict versus observed df=1.png",width=25, height=25, units='cm', res=300, pointsize=20, bg='white')
+png("Terr_Natives predict versus observed df=1 hurdle.png",width=25, height=25, units='cm', res=300, pointsize=20, bg='white')
         par(mar=c(5,4,1,1),cex=1,oma=c(3,2,1,1))
 
 # Predictions for out-of-bootstrap data
@@ -474,7 +458,7 @@ dev.off()
 ############################################################################################################################################################
 # Plot partial dependency plots from best additive model
 N=100
-png(paste(image.dir,'Dryland_Native_marginal_plots_Feb2019.png',sep=''), width=2000, height=2000, units="px", res=300)
+png(paste(image.dir,'Dryland_Native_marginal_plots_Feb2019.hurdle.png',sep=''), width=2000, height=2000, units="px", res=300)
 par(mfrow=c(2,2))
 par(mar=c(5,4,1,1))
 # Marginal functional estimates of boosted additive models for flood frequency, time since last flood and rainfall in 90 days prior to sampling
@@ -490,13 +474,13 @@ plot(sort(envdata$TSLW+mTSLW),yvalues[order(envdata$TSLW+mTSLW)], type="l",xlab=
 rug(sort(envdata$TSLW+mTSLW))
 
 # run through boot strapped samples for plotting on partial effects model
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/model.coefs.terr.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.TSLW.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/model.coefs.terr.hurdle.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.terr.TSLW.hurdle.RData")
 
 for(i in 1:N) {
-mycoefs=model.coefs.terr[[i]]
-datenSmall=datenSmall.terr[[i]]
-xmats <- extracts.terr.TSLW[[i]]
+mycoefs=model.coefs.terr.hurdle[[i]]
+datenSmall=datenSmall.terr.hurdle[[i]]
+xmats <- extracts.terr.TSLW.hurdle[[i]]
 xmatLin=xmats$'bols(TSLW, intercept = FALSE)'
 xmatSmooth=xmats$`bbs(TSLW, df = dfd, center = TRUE)`
 yvalues=xmatSmooth%*%mycoefs$`bbs(TSLW, df = dfd, center = TRUE)`+ xmatLin * mycoefs$'bols(TSLW, intercept = FALSE)'
@@ -518,9 +502,9 @@ plot(sort(envdata$d3Mon_meandepth+md3Mon_meandepth),yvalues[order(envdata$d3Mon_
 rug(sort(envdata$d3Mon_meandepth+md3Mon_meandepth))
 
 for(i in 1:N) {
-mycoefs=model.coefs.terr[[i]]
-datenSmall=datenSmall.terr[[i]]
-xmatLin <- extracts.terr.d3Mon_meandepth[[i]]
+mycoefs=model.coefs.terr.hurdle[[i]]
+datenSmall=datenSmall.terr.hurdle[[i]]
+xmatLin <- extracts.terr.d3Mon_meandepth.hurdle[[i]]
 yvalues=xmatLin[[1]]%*%mycoefs$`bols(d3Mon_meandepth, intercept = FALSE)`
 lines(sort(datenSmall$d3Mon_meandepth+md3Mon_meandepth),yvalues[order(datenSmall$d3Mon_meandepth+md3Mon_meandepth)], type="l", col=alpha("grey", 0.2))
 }
@@ -541,9 +525,9 @@ rug(sort(envdata$d3Mon_wet+md3Mon_wet))
 for(i in 1:N) {
 
 cat("iteration:", i, " \n") 
-mycoefs=model.coefs.terr[[i]]
-datenSmall=datenSmall.terr[[i]]
-xmatLin <- extracts.terr.d3Mon_wet[[i]]
+mycoefs=model.coefs.terr.hurdle[[i]]
+datenSmall=datenSmall.terr.hurdle[[i]]
+xmatLin <- extracts.terr.d3Mon_wet.hurdle[[i]]
 yvalues=xmatLin[[1]]%*%mycoefs$`bols(d3Mon_wet, intercept = FALSE)`
 lines(sort(datenSmall$d3Mon_wet+md3Mon_wet),yvalues[order(datenSmall$d3Mon_wet+md3Mon_wet)], type="l", col=alpha("grey", 0.2))
 }
@@ -554,45 +538,6 @@ yvalues=xmatLin[[1]]%*%coef(Model_covary_flow_Terr_Natives_final, which=5)[[1]]
 lines(sort(envdata$d3Mon_wet+md3Mon_wet),yvalues[order(envdata$d3Mon_wet+md3Mon_wet)], type="l")
 
 dev.off()
-
-############################################################################################################################################################
-# Explore interactions using boosted regression trees. Note that I had to assume poisson as there is no nbinom for this method. 
-
-library(dismo)
-library(gbm)
-
-mypreds=daten[,c("Terr_Natives","TSLW","FF","d3Mon_wet","d3Mon_meandepth","d1yrs_wet","d1yrs_meandepth","d3yrs_wet","d3yrs_meandepth","Freq_d1","Freq_d3","d90","d365","MeanTemp90","MinTemp90","MaxTemp90")]
-
-Terr_Nats_dismo <- gbm.step(data=mypreds, gbm.x=2:16, gbm.y=1, family="poisson", tree.complexity=2,learning.rate=0.01, bag.fraction=0.5)
-#Terr_Nats_simple <-gbm.simplify(Terr_Nats_dismo,n.drop=5)
-
-Terr_Nats_dismo.fitvalues <- Terr_Nats_dismo$fitted # extracts the fitted values
-Terr_Nats_dismo.residuals <- Terr_Nats_dismo$residuals # extracts the residuals
-
-plot(Terr_Nats_dismo.fitvalues, Terr_Nats_dismo.residuals)
-
-png(paste(image.dir,'Dryland_Native_marginal_plots_BRT Dec2018.png',sep=''), width=2000, height=2000, units="px", res=300)
-gbm.plot(Terr_Nats_dismo,n.plot=12,write.title=FALSE)
-dev.off()
-
-find.int<-gbm.interactions(Terr_Nats_dismo)
-find.int$interactions
-find.int$rank.list
-
-png(paste(image.dir,'Dryland_Native_marginal_plots_BRT interactions Feb2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-par(mar = c(0.5, 0.5, 0.5, 0.5),mfrow=c(3,3),cex=0.5)
-
-gbm.perspec(Terr_Nats_dismo, 10,2)
-gbm.perspec(Terr_Nats_dismo, 13,4)
-gbm.perspec(Terr_Nats_dismo, 10,4)
-gbm.perspec(Terr_Nats_dismo, 4,2)
-gbm.perspec(Terr_Nats_dismo, 10,8)
-gbm.perspec(Terr_Nats_dismo, 7,4)
-gbm.perspec(Terr_Nats_dismo, 13,1)
-gbm.perspec(Terr_Nats_dismo, 11,8)
-gbm.perspec(Terr_Nats_dismo, 13,2)
-dev.off()
-
 
 ############################################################################################################################################################
 # MGCV to check model fit

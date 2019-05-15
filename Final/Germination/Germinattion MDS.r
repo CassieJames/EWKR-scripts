@@ -11,7 +11,7 @@ data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Germinati
 mydata=read.csv("Germination trials.csv") 
 spinfo=read.csv("Species_info.csv")
 mergeddata=merge(mydata,spinfo,by.x="Species...rectified", by.y="Germination.species.list", all.x=TRUE)
-#write.csv(mydata_env, file = "Germination merged data check.csv") # save data out 
+write.csv(mergeddata, file = "Germination merged data checkV2.csv") # save data out 
 
 
 # Create matrix
@@ -387,6 +387,7 @@ MM.Veg<-ggplot(data = tdata, aes(MDS1, MDS2)) + geom_point(aes(shape= FF)) +them
     annotate("text", x = xpos, y=ypos, label = paste("Mid Murray, 3D, stress=",round(result$stress,digits = 2)),size=4,hjust=0)		
 
 ##############################################################################################################################################################################
+#### Lower Murray
 wetlist=c("NL", "MQ", "MM", "LM")
 
 
@@ -862,32 +863,333 @@ mytada$Veg=as.factor(mytada$Veg)
 
 write.csv(mytada, file = "Germination univariate summary.csv") # save data out 
 
-remove=c("LM_the real CC","MM_Control", "Control")
-mytada=mytada[-which(mytada$Flow_cat %in% remove),]
+
 
 ########################################
-#### Abundance
+#### Plots
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
 
-s.abund<-mytada %>% 
-    group_by(Flow_cat,Veg, Location) %>%
-    summarize(Abund=mean(Abund), n=n(), sd=sd(Abund), se=sd/sqrt(n))
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Germination results/"; setwd (data.dir)
+mytada=read.csv("Germination univariate summary.csv") 
 
-s.abund=as.data.frame(s.abund)
+variables=c("Abund", "Rich", "ExoticAbund", "ExoticRich","NativeAbund", "NativeRich")
 
-pt_abund=ggplot(s.abund, aes(factor(Flow_cat), Abund, fill = Veg)) + theme_classic(base_size = 12)+
-  geom_bar(stat="identity", position = "dodge",width = 0.5) + 
-  scale_fill_brewer(palette = "Set1")+facet_grid(.~Location)+geom_errorbar(aes(ymin=Abund-se, ymax=Abund+se), colour="black", width=.2,position=position_dodge(.9))
-  
-########################################
-#### Richness
+myd=mytada
 
-s.rich<-mytada %>% 
-    group_by(Flow_cat,Veg, Location) %>%
-    summarize(Rich=mean(Rich), n=n(), sd=sd(Rich), se=sd/sqrt(n))
 
-s.rich=as.data.frame(s.rich)
+png(paste('Germination_Seedling Abundances.png',sep=''), width=2000, height=2000, units="px", res=300)
 
-pt_rich=ggplot(s.rich, aes(factor(Flow_cat), Rich, fill = Veg)) + theme_classic(base_size = 12)+
-  geom_bar(stat="identity", position = "dodge",width = 0.5) + 
-  scale_fill_brewer(palette = "Set1")+facet_grid(.~Location)+geom_errorbar(aes(ymin=Rich-se, ymax=Rich+se), colour="black", width=.2,position=position_dodge(.9))
-  
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(Abund))
+ 
+    ggplot(myd, aes(x = factor(Flow_cat), y = Abund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean seedling abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+
+png(paste('Germination_Seedling Richness.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(Rich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = Rich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean species Richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Exotic Abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ExoticAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = ExoticAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean exotic abundance") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Exotic proportion.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ExoticAbund/Abund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = ExoticAbund/Abund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean exotic proportions") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Exotic Rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ExoticRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = ExoticRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean exotic species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Exotic proportion.png',sep=''), width=2000, height=2000, units="px", res=300)	
+	mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(Prop.exotic))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = Prop.exotic, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean proportion of exotics") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Native abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(NativeAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = NativeAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean native abundance") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Native rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(NativeRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = NativeRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean native species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Annual abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(AnnualAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = AnnualAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean annual abundance") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Annual rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(AnnualRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = AnnualRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean annual species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Perennial abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(PerennialAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = PerennialAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean perennial abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Forb rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ForbRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = AnnualRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean forb species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Forb abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ForbAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = ForbAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean forb abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+		
+png(paste('Germination_Grass rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(GrassRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = GrassRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean grass species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Grass abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(GrassAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = GrassAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean grass abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_sedge rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(Sedge.rush))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = Sedge.rush, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean sedge species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Sedge abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(Sedge.rushAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = Sedge.rushAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean sedge abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Tree rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(TreeRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = TreeRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean tree species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Tree abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(TreeAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = TreeAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean tree abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_SS rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(SSRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = SSRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean subshrub species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_SS abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(SSAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = SSAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean subshurb abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+	
+png(paste('Germination_Shrub rich.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ShrubRich))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = ShrubRich, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean shrub species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+png(paste('Germination_Shrub abund.png',sep=''), width=2000, height=2000, units="px", res=300)
+
+mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, val = mean(ShrubAbund))
+
+    ggplot(myd, aes(x = factor(Flow_cat), y = ShrubAbund, colour = Veg)) + 
+    geom_point(data = mydsum, aes(y = val)) +
+    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
+    theme_bw()+
+    xlab("Flow category")+ # for the x axis label
+    ylab("Mean shrub abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
+
+	dev.off()
+
+#########################################################################################################################
+#### Subset data into the balnaced component. subset 1 is FF C2, C3 and C4 for Veg IS and NWW at locations LM, MQ and NL
+
+
+mytada=read.csv("Germination univariate summary.csv") 
+
+subset1 <- mytada[!mytada$Location=="Middle Murray",]
+subset1 <- subset1[!subset1$Flow_cat=="C1",]
+subset1 <- subset1[!subset1$Veg=="IW",]
+
+
+
+
+

@@ -1,11 +1,17 @@
-yStrings <- c('nLeaves','Coppice','LeafArea','Height','RootLength','MassAbove','MassBelow','MassAB')
-yLabels <- c('Leaf count', 'Coppicing branch count', expression('Leaf area (cm'^2*')'), 'Height (cm)',
+yStrings <- c('nLeaves','Coppice','LeafArea','AverageLA','Height','RootLength','MassAbove','MassBelow','MassAB')
+yStrings <- c('Height','MassAbove','MassBelow','MassAB','nLeaves','LeafArea','AverageLA','RootLength','Coppice')
+
+yLabels <- c('Leaf count', 'Coppicing branch count', expression('Total leaf area (cm'^2*')'),expression('Mean leaf area (cm'^2*')'), 'Height (cm)',
              'Root length (cm)', 'Above-ground mass (g)', 'Below-ground mass (g)', 'Above:Below mass (g)')
+			 
+yLabels <- c('Height (cm)', 'Above-ground mass (g)', 'Below-ground mass (g)', 'Above:Below mass (g)','Leaf count',expression('Total leaf area (cm'^2*')'),
+expression('Mean leaf area (cm'^2*')'),'Root length (cm)','Coppicing branch count')
+			 
 xLabels <- c('DD','FD','FF')
 
-tiff('Fig_TreatmentMeansP1.tiff', width = 16, height = 12, units = 'cm', res = 300)
+tiff('Fig_TreatmentMeansP1.tiff', width = 16, height = 16, units = 'cm', res = 300)
 
-myPar <- par(mfrow = c(2,4), mar = c(3,5,2,1), oma = c(3,1,1,1))
+myPar <- par(mfrow = c(3,3), mar = c(3,5,2,1), oma = c(3,1,1,1))
 pCount <- 1
 
 for (Y in yStrings) {
@@ -37,7 +43,7 @@ for (Y in yStrings) {
   title(ylab = yLabels[pCount])
   box(bty = 'l')
   
-  if (pCount == 6) {mtext('Watering treatment', side = 1, line = 4, at = 8, cex = 0.8)}
+  if (pCount == 8) {mtext('Watering treatment', side = 1, line = 4, at = 2, cex = 0.8)}
   
   pCount <- pCount+1
 }

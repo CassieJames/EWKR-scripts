@@ -29,23 +29,45 @@ lArea.lme6  <- lme(LeafArea ~ Species, data = SL, random = ~ 1 | Tank, weights =
 lArea.lme7  <- lme(LeafArea ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 lAreaAICs <- AIC(lArea.lme1, lArea.lme2, lArea.lme3, lArea.lme4, lArea.lme5, lArea.lme6, lArea.lme7)
 
-anova(lArea.lme4, lArea.lme5)
+lArea.lme2  <- lme(LeafArea ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat), method='ML')
+lArea.lme5  <- lme(LeafArea ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat),method='ML')
+anova(lArea.lme2, lArea.lme5) #L=98.13 # leaf area
+
+AverageLA.lme1 <- lme(AverageLA ~ Species * Treat, data = SL, random = ~ 1 | Tank)
+AverageLA.lme2  <- lme(AverageLA ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
+AverageLA.lme2.1  <- lme(AverageLA ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
+AverageLA.lme3  <- lme(AverageLA ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
+AverageLA.lme3.1  <- lme(AverageLA ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
+AverageLA.lme4  <- lme(AverageLA ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
+AverageLA.lme5  <- lme(AverageLA ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
+AverageLA.lme6  <- lme(AverageLA ~ Species, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
+AverageLA.lme7  <- lme(AverageLA ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
+AverageLAAICs <- AIC(AverageLA.lme1, AverageLA.lme2, AverageLA.lme3,AverageLA.lme3.1, AverageLA.lme4, AverageLA.lme5, AverageLA.lme6, AverageLA.lme7)
+
+AverageLA.lme3  <- lme(AverageLA ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species), method='ML')
+AverageLA.lme3.1  <- lme(AverageLA ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species), method='ML')
+anova(AverageLA.lme3, AverageLA.lme3.1) 
 
 Height.lme1 <- lme(Height ~ Species * Treat, data = SL, random = ~ 1 | Tank)
 Height.lme2  <- lme(Height ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 Height.lme3  <- lme(Height ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 Height.lme3.1  <- lme(Height ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 Height.lme4  <- lme(Height ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
-#Height.lme5  <- lme(Height ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
+Height.lme5  <- lme(Height ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
 Height.lme6  <- lme(Height ~ Species, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 Height.lme7  <- lme(Height ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
-HeightAICs <- AIC(Height.lme1, Height.lme2, Height.lme3, Height.lme3.1, Height.lme4, Height.lme6, Height.lme7)
+HeightAICs <- AIC(Height.lme1, Height.lme2, Height.lme3, Height.lme3.1, Height.lme4,Height.lme5, Height.lme6, Height.lme7)
 
-anova(Height.lme3, Height.lme3.1)
+Height.lme3  <- lme(Height ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species),method='ML')
+Height.lme3.1  <- lme(Height ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species), method='ML')
+Height.lme4  <- lme(Height ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat), method='ML')
+Height.lme5  <- lme(Height ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat), method='ML')
+
+anova(Height.lme4 , Height.lme5) # interaction NS regardless of which model used
 
 RootLength.lme1 <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank)
-RootLength.lme2  <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat), REML=FALSE)
-RootLength.lme2.1  <- lme(RootLength ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat), REML=FALSE)
+RootLength.lme2  <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
+RootLength.lme2.1  <- lme(RootLength ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 RootLength.lme3  <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 RootLength.lme4  <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
 RootLength.lme4.1  <- lme(RootLength ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
@@ -53,14 +75,10 @@ RootLength.lme6  <- lme(RootLength ~ Species, data = SL, random = ~ 1 | Tank, we
 RootLength.lme7  <- lme(RootLength ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 RootLengthAICs <- AIC(RootLength.lme1, RootLength.lme2,RootLength.lme2.1, RootLength.lme3, RootLength.lme4, RootLength.lme6, RootLength.lme7)
 
+RootLength.lme2  <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat), method='ML')
+RootLength.lme2.1  <- lme(RootLength ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat), method='ML')
+
 anova(RootLength.lme2, RootLength.lme2.1)
-Anova(RootLength.lme2)
-visreg(RootLength.lme2, "Species", by="Treat", overlay=TRUE)
-
-RootLength.lme2  <- lme(RootLength ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
-drop1(RootLength.lme2,scope=c("Species","Treat","Species:Treat"),test="Chisq")
-
-
 
 
 Coppice.lme1 <- lme(Coppice ~ Species * Treat, data = SL, random = ~ 1 | Tank)
@@ -78,11 +96,13 @@ MassAbove.lme1 <- lme(MassAbove ~ Species * Treat, data = SL, random = ~ 1 | Tan
 MassAbove.lme2  <- lme(MassAbove ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 MassAbove.lme3  <- lme(MassAbove ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 MassAbove.lme4  <- lme(MassAbove ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat))
-MassAbove.lme5  <- lme(MassAbove ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat)) # Convergence probs with full-factor varIdent, so opt for next-down varIdent explaining most variance
+MassAbove.lme5  <- lme(MassAbove ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat)) 
 MassAbove.lme6  <- lme(MassAbove ~ Species, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 MassAbove.lme7  <- lme(MassAbove ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 MassAboveAICs <- AIC(MassAbove.lme1, MassAbove.lme2, MassAbove.lme3, MassAbove.lme4, MassAbove.lme5, MassAbove.lme6, MassAbove.lme7)
 
+MassAbove.lme4  <- lme(MassAbove ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat), method='ML')
+MassAbove.lme5  <- lme(MassAbove ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat), method='ML') 
 anova(MassAbove.lme4, MassAbove.lme5)
 
 MassBelow.lme1 <- lme(MassBelow ~ Species * Treat, data = SL, random = ~ 1 | Tank)
@@ -94,17 +114,21 @@ MassBelow.lme6  <- lme(MassBelow ~ Species, data = SL, random = ~ 1 | Tank, weig
 MassBelow.lme7  <- lme(MassBelow ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 MassBelowAICs <- AIC(MassBelow.lme1, MassBelow.lme2, MassBelow.lme3, MassBelow.lme4, MassBelow.lme5, MassBelow.lme6, MassBelow.lme7)
 
+MassBelow.lme4  <- lme(MassBelow ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat), method='ML')
+MassBelow.lme5  <- lme(MassBelow ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species*Treat), method='ML')
 anova(MassBelow.lme4, MassBelow.lme5)
 
 MassAB.lme1 <- lme(MassAB ~ Species * Treat, data = SL, random = ~ 1 | Tank)
 MassAB.lme2  <- lme(MassAB ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 MassAB.lme3  <- lme(MassAB ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 MassAB.lme3.1  <- lme(MassAB ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
-MassAB.lme4  <- lme(MassAB ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat)) # Convergence probs so simplification
+MassAB.lme4  <- lme(MassAB ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat)) 
 MassAB.lme5  <- lme(MassAB ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 MassAB.lme6  <- lme(MassAB ~ Species, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species))
 MassAB.lme7  <- lme(MassAB ~ Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Treat))
 MassABAICs <- AIC(MassAB.lme1, MassAB.lme2, MassAB.lme3,MassAB.lme3.1, MassAB.lme4, MassAB.lme5, MassAB.lme6, MassAB.lme7)
 
+MassAB.lme3  <- lme(MassAB ~ Species * Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species), method='ML')
+MassAB.lme3.1  <- lme(MassAB ~ Species + Treat, data = SL, random = ~ 1 | Tank, weights = varIdent(form =~ 1 | Species), method='ML')
 anova(MassAB.lme3, MassAB.lme3.1)
 
