@@ -27,7 +27,7 @@ twetlandALL=as.data.frame(t(mydata))
 
 fgrpswetlands=merge(fgrps,twetlandALL,by.x="Species",by.y="row.names",all.y=TRUE)
 
-Amph=c("ARp","ARf","S","Se")
+Amph=c("ARp","ARf","S","Se","ATl","ATe","ATw")
 ATl=c("ATl")
 ATe=c("ATe")
 ARf=c("ARf")

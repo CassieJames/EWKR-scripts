@@ -1,17 +1,11 @@
-# Script to undertake analysis of Hattah wetland vegetation data using boosted generalized additive models
-# Adapted by C James from sample code provided by Maloney et al. 2012 (Applying additive modelling, Methods in Ecology and Evolution vol 3, 116-128, Appendix E)
-# 15th August 2018 
-#
-# Load data and libraries
-
-library(mboost)
-library(MASS)
-
-
-##############################################################################################################
-# Data preparation
-# Import corrected dates (I corrected the original database for the FP but not the WL dataset - not sure why)
-
+###################################################################################################################################
+### Script to determine short term flood frequency for Hattah Lakes wetland sites
+### Written by  C.S.James (JCU, TropWATER)
+### GNU General Public License .. feel free to use / distribute ... no warranties
+### 27th August 2019
+###################################################################################################################################
+### Notes: Script aggregates environmental data into a single file
+###################################################################################################################################
 date.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/"; setwd (date.dir) 
 
 newdates=data.frame(read.csv("HTH_WL_dates_corrected.csv")) # note that in the original vegetation database the dates of collection were incorrect for a number of years
@@ -48,16 +42,16 @@ newdates$Unique_site_year_season=gsub("_06","_2006",newdates$Unique_site_year_se
 
 #Hydrology
 data.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd(data.dir)
-Hydrodata=data.frame(read.csv("Flood_HTH_WL_flood frequency prior to 2005.csv")) # load corrected hydro data with duplicates and date errors removed (V2 is version where contradictions in 'inundation' have been corrected)
+Hydrodata=data.frame(read.csv("Flood_HTH_WL_flood frequency prior to 2005 December 2020.csv")) # load corrected hydro data with duplicates and date errors removed (V2 is version where contradictions in 'inundation' have been corrected)
 Hydrodata$Unique_site_year=gsub("KRT","KT",Hydrodata$Unique_site_year)
 Hydrodata$Unique_site_year=gsub("CCNT","NCT",Hydrodata$Unique_site_year)
 Hydrodata$Unique_site_year=gsub("LHT","LHAT",Hydrodata$Unique_site_year)
 Hydrodata$Unique_site_year=gsub("CHT","CCS",Hydrodata$Unique_site_year)
 Hydrodata=Hydrodata[!duplicated(Hydrodata), ] # remove duplicates
-Hydrodata=Hydrodata[,c(3,5,19)] # tidy up and remove extra columns not needed
+Hydrodata=Hydrodata[,c(3,4,5,6,20)] # tidy up and remove extra columns not needed
 
 data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) 
-Bigmod=data.frame(read.csv("Hydraulics_HTH_WL_medium and deep merged.csv")) # import metrics determined from Bigmod model
+Bigmod=data.frame(read.csv("Hydraulics_HTH_WL_medium and deep merged December 2020.csv")) # import metrics determined from Bigmod model
 Bigmod$Unique_site_year=gsub("KRT","KT",Bigmod$Unique_site_year)
 Bigmod$Unique_site_year=gsub("CCNT","NCT",Bigmod$Unique_site_year)
 Bigmod$Unique_site_year=gsub("LHT","LHAT",Bigmod$Unique_site_year)
@@ -65,13 +59,12 @@ Bigmod$Unique_site_year=gsub("CHT","CCS",Bigmod$Unique_site_year)
 
 Hydrodata=merge(Bigmod, Hydrodata, by="Unique_site_year", All.X=TRUE)
 
-
 #Rainfall
 data.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/Hattah Lakes rainfall/"; setwd(data.dir)
 Rainfall.dat=data.frame(read.csv("Rainfall_HTH_WL.csv")) # load rainfall data which is already sorted into dates x rainfall metrics
-Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%m/%d/%Y")) # ensure dates are recognised in rainfall dat
+Rainfall.dat <- within(Rainfall.dat, Date <- as.Date(as.character(Date), format = "%Y-%m-%d")) # ensure dates are recognised in rainfall dat
 Rainfall.dat=Rainfall.dat[!duplicated(Rainfall.dat), ] # remove duplicates
-Rainfall.dat=Rainfall.dat[,c(2:6)]
+Rainfall.dat=Rainfall.dat[,c(2:10)]
 
 #Temperature
 data.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/Hattah Lakes temperature/"; setwd(data.dir)
@@ -96,8 +89,15 @@ mydata_env=merge(mydata_env, Hydrodata, by="Unique_site_year", all.x=TRUE) # I a
 mydata_env=merge(mydata_env, Temperature.dat, by.x="Date.of.collection.x", by.y="Date",all.x=TRUE) # merge 
 mydata_env=merge(mydata_env, VegStructure.dat, by.x="Site.ID.x", by.y="Site.ID",all.x=TRUE) # merge 
 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/Hattah Lakes hydrology/"; setwd (data.dir) 
+CTF.dat=data.frame(read.csv("Flood_HTH_WL_Cease2flowDec2020.csv")) # load CTF data
+CTF.dat$Site.ID=gsub("CHT","CCS",CTF.dat$Site.ID)
+CTF.dat$Site.ID=gsub("LHT","LHAT",CTF.dat$Site.ID)
+CTF.dat$Unique_site_year=gsub("CHT","CCS",CTF.dat$Unique_site_year)
+CTF.dat$Unique_site_year=gsub("LHT","LHAT",CTF.dat$Unique_site_year)
 
+mydata_env=merge(mydata_env, CTF.dat, by="Unique_site_year", all.x=TRUE)
 
 date.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Environmental data/"; setwd (date.dir) 
-write.csv(mydata_env, file = "Hattah Lakes wetlands transect based env data.csv") # save data out 
+write.csv(mydata_env, file = "Hattah Lakes wetlands transect based env data January 2021.csv") # save data out 
 

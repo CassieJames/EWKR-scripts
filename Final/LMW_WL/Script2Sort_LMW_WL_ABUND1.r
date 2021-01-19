@@ -9,9 +9,10 @@
 
 data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("LMW_WL.csv"))
+
 species=unique(mydata$Scientific.name)
 
-species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+species.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
 mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAHV2.csv")) # this list has now been amended to include all sites
 mydata=merge(mydata,mycodes,by="Scientific.name")
 
@@ -58,7 +59,7 @@ rownames(Output)=gsub("_06","_2006",rownames(Output))
 
 
 data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
-write.csv(Output , file = "Spp_site_year matrix LMW_WL_July 2018.csv") # save data out
+write.csv(Output , file = "Spp_site_year matrix LMW_WL_May 2019.csv") # save data out
 
 ###########################################################################################
 # Summarise LMW to site
@@ -82,17 +83,17 @@ tada[is.na(tada)]<-0
 rownames(tada)=paste("LMW_",rownames(tada),sep="")
 
 data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
-write.csv(tada , file = "Spp_site matrix LMW_WL_July 2018.csv") # save data out
+write.csv(tada , file = "Spp_site matrix LMW_WL_May 2019.csv") # save data out
 
 ###########################################################################################
 # LMW data summarised to wetland by year and season
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("LMW_WL.csv"))
 species=unique(mydata$Scientific.name)
 
-species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
-mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAH.csv")) # this list has now been amended to include all sites
+species.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAHV2.csv")) # this list has now been amended to include all sites
 mydata=merge(mydata,mycodes,by="Scientific.name")
 
 mydata$Date.of.collection <- as.Date(mydata$Date.of.collection, format="%m/%d/%Y")
@@ -145,15 +146,41 @@ rownames(Output)=gsub("_07","_2007",rownames(Output))
 rownames(Output)=gsub("_06","_2006",rownames(Output))
 
 data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
-write.csv(Output , file = "Spp_site_year_season matrix LMW_WL_July 2018.csv") # save data out
+write.csv(Output , file = "Spp_site_year_season matrix LMW_WL_May 2019.csv") # save data out
+
+###################################################################################################################################
+# May 2019 - this creates the dataframe to use for the common species ONLY beta diversity analysis
+###################################################################################################################################
+
+Output=ceiling(Output) # first round up as these numbers represent % cover - any detection is a detection
+Output[Output > 0] <- 1# Second change to presence/absence because we are just interested in repeated observations over time
+
+LMWsites=c("BB","CR","LP","UL","MUH","BI","UMWC","W33","SCB","MLH","WL","WW")
+
+tada = matrix(NA,nrow=length(LMWsites),ncol=ncol(Output))#define the output matrix
+rownames(tada)=LMWsites
+colnames(tada)=colnames(Output)
+
+for(s in LMWsites) { # 
+tdata=Output[grep(s,rownames(Output)),]
+out=colSums(tdata)
+tada[grep(s,rownames(tada)),] <- out
+}
+
+rownames(tada)=paste("LMW","_",rownames(tada),sep="")
+
+tada[tada<3 ] <- 0 # if species recorded less than 5 times turn value to zero
+
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
+write.csv(tada , file = "Spp_site_matrix LMW_WL_May 2019 COMMON ONLY.csv") # save data out
 
 #######################################################################################################
 # LMW data site by transect and year and season
 
 data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir)
 mydata=data.frame(read.csv("LMW_WL.csv"))
-species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
-mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAH.csv")) # this list has now been amended to include chowilla
+species.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAHV2.csv")) # this list has now been amended to include chowilla
 
 mid = function(text, start_num, num_char) {
   substr(text, start_num, start_num + num_char - 1)
@@ -204,7 +231,7 @@ Output[grep(s, rownames(Output), fixed=TRUE),grep(spp,colnames(Output), fixed=TR
 }
 Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
 
 rownames(Output)=paste("LMW_",rownames(Output),sep="")
 rownames(Output)=gsub("_13","_2013",rownames(Output))
@@ -224,7 +251,7 @@ rownames(Output)=gsub("_MLT","_MLH",rownames(Output)) # this code has to be chan
 rownames(Output)=gsub("_LT","_LP",rownames(Output))
 rownames(Output)=gsub("_MUT","_MUH",rownames(Output))
 
-write.csv(Output , file = "Spp_site_transect_year_transect matrix LMW_July 2018.csv") # save data out
+write.csv(Output , file = "Spp_site_year_transect matrix LMW_May 2019.csv") # save data out
 
 ##########################################################################################################################
 #### Script to summarise data for each wetland.
@@ -281,5 +308,5 @@ tada[grep(w,rownames(tada)),grep(seas,colnames(tada))] = seasno
 
 tada=tada[,colSums(tada!= 0) > 0]	# remove columns with no records
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/LMW_data_csvs/"; setwd (data.dir)
-write.csv(tada , file = "Data summary table LMW_WL_July 2018.csv") # save data out
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir)
+write.csv(tada , file = "Data summary table LMW_WL_May 2019.csv") # save data out

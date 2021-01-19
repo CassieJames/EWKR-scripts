@@ -4,13 +4,13 @@
 ###########################################################################################
 # Import data and check that species have a short species code and its unique
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("Copy of BMFVEGCLEANED.csv"))
 
 #species=as.data.frame(unique(mydata$species_))
 #colnames(species)="species.name"
 
-species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+species.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
 mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAHV2.csv")) # this list has now been amended to all PFG added
 
 #mycodes.check=merge(mycodes,species,by.x="Scientific.name",by.y="species.name",all.x=TRUE,all.y=TRUE)
@@ -45,9 +45,35 @@ Output[grep(s, rownames(Output), fixed=TRUE),grep(spp,colnames(Output), fixed=TR
 }
 Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix (matrix is BARM_SITE_YEAR_SEASON)
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
 
-write.csv(Output , file = "Spp_site_year_season matrix Barmah_WL_July2018.csv") # save data out
+write.csv(Output , file = "Spp_site_year_season matrix Barmah_WL_May 2019.csv") # save data out
+
+###################################################################################################################################
+# May 2019 - this creates the dataframe to use for the common species ONLY beta diversity analysis
+###################################################################################################################################
+
+Output=ceiling(Output) # first round up as these numbers represent % cover - any detection is a detection
+Output[Output > 0] <- 1# Second change to presence/absence because we are just interested in repeated observations over time
+
+Barmsites=c("WL","BDEAD","SP","TL","DUCK","RBS","TIB","BG","Alga","TIO","LRS")
+
+tada = matrix(NA,nrow=length(Barmsites),ncol=ncol(Output))#define the output matrix
+rownames(tada)=Barmsites
+colnames(tada)=colnames(Output)
+
+for(s in Barmsites) { # 
+tdata=Output[grep(s,rownames(Output)),]
+out=colSums(tdata)
+tada[grep(s,rownames(tada)),] <- out
+}
+
+rownames(tada)=paste("BARM","_",rownames(tada),sep="")
+
+tada[tada<3 ] <- 0 # if species recorded less than 5 times turn value to zero
+
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+write.csv(tada , file = "Spp_site_matrix Barmah_WL_May 2019 COMMON ONLY.csv") # save data out
 
 ###################################################################################################################################
 #### Summarise by wetland 
@@ -66,8 +92,8 @@ tada[grep(s,rownames(tada)),] <- out
 
 rownames(tada)=paste("BARM","_",rownames(tada),sep="")
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
-write.csv(tada , file = "Spp_site_matrix Barmah_WL_July 2018.csv") # save data out
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+write.csv(tada , file = "Spp_site_matrix Barmah_WL_May 2019.csv") # save data out
 
 ###################################################################################################################################
 #### Summarise by year and wetland 
@@ -94,16 +120,16 @@ tada[grep(paste(s,"_",yy,sep=""), rownames(tada), fixed=TRUE),] <-colSums(ttdata
 
 rownames(tada)=paste("BARM","_",rownames(tada),sep="")
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
-write.csv(tada , file = "Spp_site_year matrix Barmah_WL_July 2018.csv") # save data out
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+write.csv(tada , file = "Spp_site_year matrix Barmah_WL_May 2019.csv") # save data out
 
 ################################################################################################################################
 #### Summarise by wetland, replicate, year and season
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
 mydata=data.frame(read.csv("Copy of BMFVEGCLEANED.csv"))
 
-species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+species.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
 mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAHV2.csv")) # this list has now been amended to all PFG added
 
 mydata=merge(mydata,mycodes,by.x="species_",by.y="Scientific.name",all.x=TRUE)
@@ -135,9 +161,9 @@ Output[grep(s, rownames(Output), fixed=TRUE),grep(spp,colnames(Output), fixed=TR
 }
 Output[is.na(Output)] <- 0 # replace nas with zeros in species matrix 
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
 
-write.csv(Output , file = "Spp_site_trans_year_season matrix Barmah_WL_July2018.csv") # save data out
+write.csv(Output , file = "Spp_site_trans_year_season matrix Barmah_WL_May 2019.csv") # save data out
 
 ################################################################################################################################
 # Data summary
@@ -179,15 +205,15 @@ tada[grep(w,rownames(tada)),grep(seas,colnames(tada))] = seasno
 
 tada=tada[,colSums(tada!= 0) > 0]	# remove columns with no records
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir)
-write.csv(tada , file = "Data summary table Barmah_WL_July 2018.csv") # save data out
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir)
+write.csv(tada , file = "Data summary table Barmah_WL_May 2019.csv") # save data out
 
 ################################################################################################################################
 # Barmah species accumulation curves
-image.dir = "C:/Users/jc246980/Documents/MD Vegetation/Plots/"
+image.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Plots/"
 wetlist=c("WL","BDEAD","SP_","TL","DUCK","RBS","TIB","BG","Alga","TIO","LRS")
 
-png(paste(image.dir,"Barmah Wetlands accumulation_curves_with replicates sep PA.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
+png(paste(image.dir,"Barmah Wetlands accumulation_curves_May 2019.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(4,3),cex=1,oma=c(2,0,1,0.5))
 		
 for(w in wetlist) { # 

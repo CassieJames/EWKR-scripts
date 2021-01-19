@@ -17,38 +17,13 @@ data.matrix.env.data=read.csv("Hattah wetlands response by metrics.csv") # load 
 image.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Plots/"
 envdata=data.matrix.env.data # copy data
 
+
 ###########################################################################################################################
-# Have a look at response metric. Note that Wet_Natives is occurrence of species in 1:15 sub-quadrats but this value is then summed over all the 
-# wetland species in that 1X15m transect so it tends to have a strange peak at 15 because there were lots of occasions with a single species that 
-# occurred across all the 1m quads. This is an artifact of the method and might be a good reason to argue against the field approach?!
-# Therefore the fit is generally good but underestimates in that interval if you look at the histogram.
-# Envdata=subset(envdata, envdata$Wet_Natives>0) # I explored just modelling positive counts but the nbiom model looked okay with all the data
-# negative binomial looks like a sensible distribution
 
-
-fitdist(envdata$WetNatRich, "nbinom")
-fitD <- dnbinom(0:100, size=0.4847895, mu=13.8976039)
-hist(envdata$Wet_Natives,prob=TRUE)
+fitD <- dnbinom(0:100, size=1.030002, mu=1.837379)
+hist(envdata$WetNatRich,prob=TRUE)
 lines(fitD, lwd="3", col="blue")
-
-###########################################################################################################################
-# I explored including previous vegetation abundance (T-1) as potential predictor in current year (T)
-# This step could be removed if it was felt that the spatial and spatio-temporal terms delt with any potential autocorrelation 
-
-#sitelist=unique(envdata$Site.ID.x)
-#envdata$WetNatRich_T1 <-NA
-#for(s in sitelist) { # loop through each site - because some sites don't have year 4 I have had to create two sets of rules
-#mydata=envdata[which(envdata$Site.ID.x==s),]
-#yoi=unique(mydata$WaterYr)
-#yoi=yoi[yoi != "2016"]
-#for(y in yoi){
-#if(y==yoi[1]) next # if y is the first year of the list then skip 
-#envdata[which(envdata$WaterYr==y & envdata$Site.ID.x==s),c("WetNatRich_T1")]<-envdata[which(envdata$WaterYr==y-1& envdata$Site.ID.x==s),c("Wet_Natives")]
-#}
-# Do 2016 separately as will have to use 2014 result as predictor as no 2015 data
-##envdata[which(envdata$WaterYr==2016 & envdata$Site.ID.x==s),c("Wet_Natives_T1")]<-envdata[which(envdata$WaterYr==2014 & envdata$Site.ID.x==s),c("Wet_Natives")]
-##}
-#envdata=envdata[!is.na(envdata$WetNatRich_T1),] # remove sites where there is no T-1 data
+descdist(envdata$WetNatRich, boot = 1000)
 
 ###########################################################################################################################
 # Prepare environmental data - centering is strongly recommended for this method
@@ -81,6 +56,9 @@ envdata$Northing=as.numeric(scale(envdata$Northing^2,center=FALSE, scale=TRUE))
 envdata$MeanTemp90=as.numeric(scale((envdata$MeanTemp90),center=TRUE, scale=FALSE))
 envdata$MinTemp90=as.numeric(scale((envdata$MinTemp90),center=TRUE, scale=FALSE))
 envdata$MaxTemp90=as.numeric(scale((envdata$MaxTemp90),center=TRUE, scale=FALSE))
+envdata$MeanTemp365=as.numeric(scale((envdata$MeanTemp365),center=TRUE, scale=FALSE))
+envdata$MinTemp365=as.numeric(scale((envdata$MinTemp365),center=TRUE, scale=FALSE))
+envdata$MaxTemp365=as.numeric(scale((envdata$MaxTemp365),center=TRUE, scale=FALSE))
 envdata$Freq_d1=as.numeric(scale((envdata$Freq_d1),center=TRUE, scale=FALSE))
 envdata$Freq_d3=as.numeric(scale((envdata$Freq_d3),center=TRUE, scale=FALSE))
 envdata$CTF_prop_d1=as.numeric(scale((envdata$CTF_prop_d1),center=TRUE, scale=FALSE))
@@ -91,13 +69,14 @@ envdata$WaterYr=as.numeric(envdata$WaterYr)
 envdata <- as.data.frame(cbind(interc=1, envdata)) # and a column vector of 1's for the intercept
 
 
++brandom(Site.ID,df=1)+
+
+
 
 ###########################################################################################################################				
 # Candidate model formulas
 
 dfd=1 # set degrees of freedom to 1
-
-form_legacy <- WetNatRich~bols(WetNatRich_T1, intercept=FALSE)+bbs(WetNatRich_T1, center=TRUE, df=dfd)+bols(interc,intercept=FALSE)
 
 
 form_spatial <- WetNatRich~ bspatial(Easting, Northing, knots = 6, boundary.knots=NULL,df=dfd,center=TRUE,differences=1)+
@@ -125,6 +104,9 @@ form_covary <- 	WetNatRich~
 				bols(MeanTemp90, intercept=FALSE)+bbs(MeanTemp90, center=TRUE, df=dfd)+
 				bols(MinTemp90, intercept=FALSE)+bbs(MinTemp90, center=TRUE, df=dfd)+
 				bols(MaxTemp90, intercept=FALSE)+bbs(MaxTemp90, center=TRUE, df=dfd)+
+				bols(MeanTemp365, intercept=FALSE)+bbs(MeanTemp365, center=TRUE, df=dfd)+
+				bols(MinTemp365, intercept=FALSE)+bbs(MinTemp365, center=TRUE, df=dfd)+
+				bols(MaxTemp365, intercept=FALSE)+bbs(MaxTemp365, center=TRUE, df=dfd)+
 				bols(interc,intercept=FALSE)
 				
 form_covary_flow <- 	WetNatRich~
@@ -146,6 +128,9 @@ form_covary_climate <- 	WetNatRich~
 				bols(MeanTemp90, intercept=FALSE)+bbs(MeanTemp90, center=TRUE, df=dfd)+
 				bols(MinTemp90, intercept=FALSE)+bbs(MinTemp90, center=TRUE, df=dfd)+
 				bols(MaxTemp90, intercept=FALSE)+bbs(MaxTemp90, center=TRUE, df=dfd)+
+				bols(MeanTemp365, intercept=FALSE)+bbs(MeanTemp365, center=TRUE, df=dfd)+
+				bols(MinTemp365, intercept=FALSE)+bbs(MinTemp365, center=TRUE, df=dfd)+
+				bols(MaxTemp365, intercept=FALSE)+bbs(MaxTemp365, center=TRUE, df=dfd)+
 				bols(interc,intercept=FALSE)
 				
 				
@@ -171,6 +156,9 @@ form_covary_spatial <- WetNatRich~ bspatial(Easting, Northing, knots = 6, bounda
 				bols(MeanTemp90, intercept=FALSE)+bbs(MeanTemp90, center=TRUE, df=dfd)+
 				bols(MinTemp90, intercept=FALSE)+bbs(MinTemp90, center=TRUE, df=dfd)+
 				bols(MaxTemp90, intercept=FALSE)+bbs(MaxTemp90, center=TRUE, df=dfd)+
+				bols(MeanTemp365, intercept=FALSE)+bbs(MeanTemp365, center=TRUE, df=dfd)+
+				bols(MinTemp365, intercept=FALSE)+bbs(MinTemp365, center=TRUE, df=dfd)+
+				bols(MaxTemp365, intercept=FALSE)+bbs(MaxTemp365, center=TRUE, df=dfd)+
 				bols(interc,intercept=FALSE)			
 							
 
@@ -184,56 +172,26 @@ form_tree_spatial <- WetNatRich~bspatial(Easting, Northing, knots = 6, boundary.
 				bols(Easting,by=WaterYr,intercept=FALSE)+
 				bols(Northing,by=WaterYr,intercept=FALSE)+
 				bols(Easting, by = Northing, intercept = FALSE) %X% bols(WaterYr, intercept = FALSE) +
-				btree(TSLW,FF,d3Mon_wet,d3Mon_meandepth,d1yrs_wet,d1yrs_meandepth,d3yrs_wet,d3yrs_meandepth,Freq_d1,Freq_d3,d90,d365,MeanTemp90,MinTemp90,MaxTemp90,tree_controls=tctrl)+
+				btree(TSLW,FF,d3Mon_wet,d3Mon_meandepth,d1yrs_wet,d1yrs_meandepth,d3yrs_wet,d3yrs_meandepth,Freq_d1,Freq_d3,d90,d365,MeanTemp90,MinTemp90,MaxTemp90,MeanTemp365,MinTemp365,MaxTemp365,tree_controls=tctrl)+
 				bols(interc,intercept=FALSE)
 
 form_tree       <- WetNatRich~
-				btree(TSLW,FF,d3Mon_wet,d3Mon_meandepth,d1yrs_wet,d1yrs_meandepth,d3yrs_wet,d3yrs_meandepth,Freq_d1,Freq_d3,d90,d365,MeanTemp90,MinTemp90,MaxTemp90,tree_controls=tctrl)+
+				btree(TSLW,FF,d3Mon_wet,d3Mon_meandepth,d1yrs_wet,d1yrs_meandepth,d3yrs_wet,d3yrs_meandepth,Freq_d1,Freq_d3,d90,d365,MeanTemp90,MinTemp90,MaxTemp90,MeanTemp365,MinTemp365,MaxTemp365,tree_controls=tctrl)+
 				bols(interc,intercept=FALSE)
-				
-### interaction model				
-				
-form_covary_interact <- 	WetNatRich~
-				bols(TSLW, intercept=FALSE)+bbs(TSLW, center=TRUE, df=dfd)+
-				bols(FF, intercept=FALSE)+bbs(FF, center=TRUE, df=dfd)+
-				bols(d3Mon_wet, intercept=FALSE)+bbs(d3Mon_wet, center=TRUE, df=dfd)+
-				bols(d3Mon_meandepth, intercept=FALSE)+bbs(d3Mon_meandepth, center=TRUE, df=dfd)+
-				bols(d1yrs_wet, intercept=FALSE)+bbs(d1yrs_wet, center=TRUE, df=dfd)+
-				bols(d1yrs_meandepth, intercept=FALSE)+bbs(d1yrs_meandepth, center=TRUE, df=dfd)+
-				bols(d3yrs_wet, intercept=FALSE)+bbs(d3yrs_wet, center=TRUE, df=dfd)+
-				bols(d3yrs_meandepth, intercept=FALSE)+bbs(d3yrs_meandepth, center=TRUE, df=dfd)+
-				bols(Freq_d1, intercept=FALSE)+bbs(Freq_d1, center=TRUE, df=dfd)+
-				bols(Freq_d3, intercept=FALSE)+bbs(Freq_d3, center=TRUE, df=dfd)+
-				bols(d90, intercept=FALSE)+bbs(d90, center=TRUE, df=dfd)+
-				bols(d365, intercept=FALSE)+bbs(d365, center=TRUE, df=dfd)+
-				bols(MeanTemp90, intercept=FALSE)+bbs(MeanTemp90, center=TRUE, df=dfd)+
-				bols(MinTemp90, intercept=FALSE)+bbs(MinTemp90, center=TRUE, df=dfd)+
-				bols(MaxTemp90, intercept=FALSE)+bbs(MaxTemp90, center=TRUE, df=dfd)+
-				bols(interc,intercept=FALSE)+
-				bbs(d3Mon_meandepth, by = d90,center=TRUE, df=dfd)+
-				bbs(FF, by = MeanTemp90,center=TRUE, df=dfd)+
-				bbs(d1yrs_wet, by = FF,center=TRUE, df=dfd)+
-				bbs(d1yrs_meandepth, by = FF,center=TRUE, df=dfd)+
-				bbs(Freq_d3, by = d90,center=TRUE, df=dfd)
-				
+								
 
 ###########################################################################################################################
 # Run models
 
 daten=envdata
 
-#Model_legacy_WetNatRich <-mboost(form_legacy,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
 Model_spatial_WetNatRich <-mboost(form_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_covary_WetNatRich <-gamboost(form_covary,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
-Model_covary_climate_WetNatRich<-gamboost(form_covary_climate,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_covary_flow_WetNatRich<-gamboost(form_covary_flow,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
-Model_covary_spatial_WetNatRich <-gamboost(form_covary_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
+Model_covary_WetNatRich <-mboost(form_covary,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
+Model_covary_climate_WetNatRich<-mboost(form_covary_climate,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
+Model_covary_flow_WetNatRich<-mboost(form_covary_flow,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # orig
+Model_covary_spatial_WetNatRich <-mboost(form_covary_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) # originally 10000 but reduced down the mstop value for trial runs as it takes a while
 Model_tree_spatial_WetNatRich <-mboost(form_tree_spatial,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.01)) # 
 Model_tree_WetNatRich <-mboost(form_tree,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE,nu=0.01)) # 
-Model_covary_interact_WetNatRich <-gamboost(form_covary_interact,family = NBinomial(),data = daten, control=boost_control(mstop=10000,trace=TRUE, nu=0.01)) 
-
-#cv5f <- cv(model.weights(Model_legacy_WetNatRich), type='subsampling', B=25)
-#cv_legacy_WetNatRich <- cvrisk(Model_legacy_WetNatRich, folds=cv5f)
 
 cv5f <- cv(model.weights(Model_spatial_WetNatRich), type='subsampling', B=25)
 cv_spatial_WetNatRich <- cvrisk(Model_spatial_WetNatRich, folds=cv5f)
@@ -256,11 +214,6 @@ cv_tree_spatial_WetNatRich<- cvrisk(Model_tree_spatial_WetNatRich, folds=cv5f)
 cv5f <- cv(model.weights(Model_tree_WetNatRich), type='subsampling', B=25)
 cv_tree_WetNatRich<- cvrisk(Model_tree_WetNatRich, folds=cv5f)
 
-cv5f <- cv(model.weights(Model_covary_interact_WetNatRich), type='subsampling', B=25)
-cv_Model_covary_interact_WetNatRich<- cvrisk(Model_covary_interact_WetNatRich, folds=cv5f)
-
-#st<-(mstop(cv_legacy_WetNatRich)) # 343
-#Model_legacy_WetNatRich[st]
 
 st<-(mstop(cv_spatial_WetNatRich)) # 352
 Model_spatial_WetNatRichs[st]
@@ -282,9 +235,6 @@ Model_tree_spatial_WetNatRich[st]
 
 st<-(mstop(cv_tree_WetNatRich )) # 687
 Model_tree_WetNatRich[st]
-
-st<-(mstop(cv_Model_covary_interact_WetNatRich)) #10000
-Model_covary_interact_WetNatRich[st]
 
 
 ###########################################################################################################################
@@ -353,9 +303,9 @@ predicted.in.rich <- list()
 model.coefs.rich <-list()
 datenSmall.rich <-list()
 extracts.rich.TSLW <-list()
-extracts.rich.d3Mon_meandepth <-list()
+extracts.rich.d3Mon_wet <-list()
 extracts.rich.Freq_d3 <-list()
-extracts.rich.d1yrs_wet <-list()
+extracts.rich.d3Mon_meandepth <-list()
 
 N = 100
 
@@ -378,7 +328,7 @@ datenSmall <- daten[indvecL,][1:(n/2),] # subset to half data for test run
 		extracts.rich.TSLW[[i]]=extract(Model_covary_flow_WetNatRichboot,which="TSLW")
 		extracts.rich.d3Mon_meandepth[[i]]=extract(Model_covary_flow_WetNatRichboot,which="d3Mon_meandepth")
 		extracts.rich.Freq_d3[[i]]=extract(Model_covary_flow_WetNatRichboot,which="Freq_d3")
-		extracts.rich.d1yrs_wet[[i]]=extract(Model_covary_flow_WetNatRichboot,which="d1yrs_wet")
+		extracts.rich.d3Mon_wet[[i]]=extract(Model_covary_flow_WetNatRichboot,which="d3Mon_wet")
 		model.coefs.rich[[i]] = mycoefs
 		datenSmall.rich[[i]] = datenSmall
 #### goodness of fit in-bootstrap
@@ -398,7 +348,7 @@ quantile(r2.data, c(.1, .5, .9))
 save(extracts.rich.TSLW, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.TSLW.RData")
 save(extracts.rich.d3Mon_meandepth, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d3Mon_meandepth.RData")
 save(extracts.rich.Freq_d3, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.Freq_d3.Rdata")
-save(extracts.rich.d1yrs_wet, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d1yrs_wet.Rdata")
+save(extracts.rich.d3Mon_wet, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d3Mon_wet.RData")
 
 save(predicted.in.rich, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/predicted.in.rich.RData")
 save(model.coefs.rich, file = "c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/model.coefs.rich.RData") 
@@ -409,14 +359,13 @@ load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/pre
 load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/model.coefs.rich.RData")
 load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.TSLW.RData")
 load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d3Mon_meandepth.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d1yrs_wet.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.Freq_d3.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d3Mon_wet.RData")
 load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/datenSmall.rich.RData")
 
 ############################################################################################################################################################
 # Plot observed versus fitted values
 
-png("WetNatRich predict versus observed df=1.png",width=12, height=25, units='cm', res=300, pointsize=20, bg='white')
+png("WetNatRich predict versus observed May 2019.png",width=12, height=25, units='cm', res=300, pointsize=20, bg='white')
         par(mar=c(5,4,1,1),cex=1,oma=c(3,2,1,1))
 
 # Predictions for out-of-bootstrap data
@@ -431,8 +380,10 @@ dev.off()
 ############################################################################################################################################################
 # Plot partial dependency plots from best additive model for richness model
 N= 100
-png(paste(image.dir,'Wetland_Rich_marginal_plots_May2019.png',sep=''), width=3000, height=1000, units="px", res=300)
-par(mfrow=c(2,))
+
+image.dir="C:/Users/jc246980/Documents/Current projects/";setwd(image.dir)
+png(paste(image.dir,'Wetland_Rich_marginal_plots_May2019.png',sep=''), width=2000, height=2000, units="px", res=300)
+par(mfrow=c(2,2))
 par(mar=c(5,4,1,1))
 
 
@@ -444,6 +395,8 @@ xmatSmooth <- extract(Model_covary_flow_WetNatRich,which=2)
 yvalues=xmatSmooth[[1]]%*%coef(Model_covary_flow_WetNatRich)$`bbs(TSLW, df = dfd, center = TRUE)`+ xmatLin[[1]] * coef(Model_covary_flow_WetNatRich)$'bols(TSLW, intercept = FALSE)'
 plot(sort(envdata$TSLW+mTSLW),yvalues[order(envdata$TSLW+mTSLW)], type="l",xlab='log10(TSLW+1)', ylab='f(TSLW)', ylim=c(-1.5,1.5))
 rug(sort(envdata$TSLW+mTSLW))
+
+
 
 # run through boot strapped samples for plotting on partial effects model
 load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/model.coefs.wet.RData")
@@ -491,29 +444,32 @@ yvalues=xmatLin[[1]]%*%coef(Model_covary_flow_WetNatRich, which=7)[[1]]
 lines(sort(envdata$d3Mon_meandepth+md3Mon_meandepth),yvalues[order(envdata$d3Mon_meandepth+md3Mon_meandepth)], type="l")
 
 #################
-
-md1yrs_wet<-mean((sorteddata$d1yrs_wet))
-xmatSmooth <- extract(Model_covary_flow_WetNatRich,which="d1yrs_wet")
-yvalues=xmatSmooth[[2]]%*%coef(Model_covary_WetNatRich)$`bbs(d1yrs_wet, df = dfd, center = TRUE)`
-plot(sort(envdata$d1yrs_wet+md1yrs_wet),yvalues[order(envdata$d1yrs_wet+md1yrs_wet)], type="l",xlab='d1yrs_wet', ylab='f(d1yrs_wet)', ylim=c(-0.25, 0.25))
-rug(sort(envdata$d1yrs_wet+md1yrs_wet))
+is.not.null <- function(x) !is.null(x)
+md3Mon_wet<-mean((sorteddata$d3Mon_wet))
+xmatSmooth <- extract(Model_covary_flow_WetNatRich,which="d3Mon_wet")
+yvalues=xmatSmooth[[1]]%*%coef(Model_covary_WetNatRich)$`bols(d3Mon_wet, intercept = FALSE)`
+plot(sort(envdata$d3Mon_wet+md3Mon_wet),yvalues[order(envdata$d3Mon_wet+md3Mon_wet)], type="l",xlab='d3Mon_wet', ylab='f(d3Mon_wet)', ylim=c(-0.25, 0.25))
+rug(sort(envdata$d3Mon_wet+md3Mon_wet))
 
 # run through boot strapped samples for plotting on partial effects model
 load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/model.coefs.rich.RData")
-load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d1yrs_wet.RData")
+load("c:/Users/jc246980/Documents/Current projects/MD Vegetation/Rdata files/extracts.rich.d3Mon_wet.RData")
 
 for(i in 1:N) {
 mycoefs=model.coefs.rich[[i]]
 datenSmall=datenSmall.rich[[i]]
-xmatSmooth <- extracts.rich.d1yrs_wet[[i]]
-yvalues=xmatSmooth[[2]]%*%mycoefs$`bbs(d1yrs_wet, df = dfd, center = TRUE)`
-lines(sort(datenSmall$d1yrs_wet+md1yrs_wet),yvalues[order(datenSmall$d1yrs_wet+md1yrs_wet)], type="l", col=alpha("grey", 0.2))
-}
+xmatSmooth <- extracts.rich.d3Mon_wet[[i]]
+if (is.not.null(mycoefs$`bols(d3Mon_wet, intercept = FALSE)`)){
+yvalues=xmatSmooth[[1]]%*%mycoefs$`bols(d3Mon_wet, intercept = FALSE)`
+lines(sort(datenSmall$d3Mon_wet+md3Mon_wet),yvalues[order(datenSmall$d3Mon_wet+md3Mon_wet)], type="l", col=alpha("grey", 0.2))}
+else {
+print("missing coef")
+}}
 
-md1yrs_wet<-mean((sorteddata$d1yrs_wet))
-xmatSmooth <- extract(Model_covary_flow_WetNatRich,which="d1yrs_wet")
-yvalues=xmatSmooth[[2]]%*%coef(Model_covary_flow_WetNatRich)$`bbs(d1yrs_wet, df = dfd, center = TRUE)`
-lines(sort(envdata$d1yrs_wet+md1yrs_wet),yvalues[order(envdata$d1yrs_wet+md1yrs_wet)], type="l")
+md3Mon_wet<-mean((sorteddata$d3Mon_wet))
+xmatSmooth <- extract(Model_covary_flow_WetNatRich,which="d3Mon_wet")
+yvalues=xmatSmooth[[1]]%*%coef(Model_covary_WetNatRich)$`bols(d3Mon_wet, intercept = FALSE)`
+lines(sort(envdata$d3Mon_wet+md3Mon_wet),yvalues[order(envdata$d3Mon_wet+md3Mon_wet)], type="l")
 
 
 #################
@@ -533,7 +489,7 @@ library(groupdata2) # has fold function that allows user to specify group
 
 set.seed=806
 
-mypreds=daten[,c("WetNatRich","TSLW","FF","d3Mon_wet","d3Mon_meandepth","d1yrs_wet","d1yrs_meandepth","d3yrs_wet","d3yrs_meandepth","Freq_d1","Freq_d3","d90","d365","MeanTemp90","MinTemp90","MaxTemp90")]
+mypreds=daten[,c("WetNatRich","TSLW","FF","d3Mon_wet","d3Mon_meandepth","d1yrs_wet","d1yrs_meandepth","d3yrs_wet","d3yrs_meandepth","Freq_d1","Freq_d3","d90","d365","MeanTemp90","MinTemp90","MaxTemp90","MeanTemp365","MinTemp365","MaxTemp365")]
 hehehe=fold(daten,k=10,id_col='Site.ID.x') # creates folds of data whilst keeping site.id in same group
 
 #### fine tune model
@@ -545,26 +501,30 @@ myrmse = rmse(mypreds[,1], Wet_Rich_dismo$fitted)
 int.dev
 myrmse
 
-gbm.plot.fits(Wet_Rich_dismo)
+gbm.plot.fits(Wet_Rich_dismo,n.plot=3)
 
 Wet_Nats_dismo.fitvalues <- Wet_Nats_dismo$fitted # extracts the fitted values
 Wet_Nats_dismo.residuals <- Wet_Nats_dismo$residuals # extracts the residuals
 
 plot(Wet_Nats_dismo.fitvalues, Wet_Nats_dismo.residuals)
 
-png(paste(image.dir,'Wetland_Rich_marginal_plots_BRT Feb2019.png',sep=''), width=2000, height=2000, units="px", res=300)
+png(paste(image.dir,'Wetland_Rich_marginal_plots_BRT May 2019.png',sep=''), width=6000, height=3000, units="px", res=1000)
 
-gbm.plot(Wet_Rich_dismo,n.plot=6,write.title=FALSE)
+gbm.plot(Wet_Rich_dismo,n.plot=3,write.title=FALSE,plot.layout=c(1, 3))
 dev.off()
 
 find.int<-gbm.interactions(Wet_Rich_dismo)
 find.int$interactions
 find.int$rank.list
 
-png(paste(image.dir,'Wetland_Rich_marginal_plots_BRT interactions Feb2019.png',sep=''), width=2000, height=2000, units="px", res=300)
+png(paste(image.dir,'Wetland_Rich_marginal_plots_BRT interactions May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
 par(mar = c(0.5, 0.5, 0.5, 0.5),mfrow=c(3,3),cex=0.5)
 
-gbm.perspec(Wet_Rich_dismo, 2,1,col="grey")
+gbm.perspec(Wet_Rich_dismo, 5,2,col="grey")
+
+dev.off()
+
+
 gbm.perspec(Wet_Rich_dismo, 7,4)
 gbm.perspec(Wet_Rich_dismo, 10,2)
 gbm.perspec(Wet_Rich_dismo, 13,2)
@@ -576,7 +536,7 @@ gbm.perspec(Wet_Rich_dismo, 6,5)
 
 dev.off()
 
-png(paste(image.dir,'Wetland_Rich_marginal_plots_BRT interactions Feb2019.png',sep=''), width=2000, height=2000, units="px", res=300)
+png(paste(image.dir,'Wetland_Rich_marginal_plots_BRT interactions May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
 par(mar = c(0.5, 0.5, 0.5, 0.5),cex=01)
 
 gbm.perspec(Wet_Rich_dismo, 1,2,col="grey")

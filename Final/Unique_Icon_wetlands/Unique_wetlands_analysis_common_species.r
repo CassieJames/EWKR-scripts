@@ -31,42 +31,40 @@ library(indicspecies)
 ######################################################################################################################################
 ### Step 1 load data from different files 
 
-data.dir="C:/Users/jc246980/Documents/MD Vegetation/LMW_data_csvs/"; setwd(data.dir)
-image.dir="C:/Users/jc246980/Documents/MD Vegetation/Plots/"
+data.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd(data.dir)
+image.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Plots/"
 
-data.matrix.LMW=read.csv("Spp_site matrix LMW_WL_July 2018.csv", row.names=1) # load data - object name is 'Output' ... :)
+data.matrix.LMW=read.csv("Spp_site_matrix LMW_WL_May 2019 COMMON ONLY.csv", row.names=1) # load data - object name is 'Output' ... :)
 
 Output.LMW =data.matrix.LMW
 
-data.dir="C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd(data.dir)
-data.matrix.HLWL=read.csv("Spp_site matrix HTH_WL_July 2018.csv",row.names=1) # load data - object name is 'tada' ... :)
+data.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd(data.dir)
+data.matrix.HLWL=read.csv("Spp_site_matrix Hattah_WL_May 2019 COMMON ONLY.csv",row.names=1) # load data - object name is 'tada' ... :)
 
 Output.HLWL =data.matrix.HLWL
 
 
-data.dir="C:/Users/jc246980/Documents/MD Vegetation/Chowilla_data_csvs/"; setwd(data.dir)
-data.matrix.Chow=read.csv("Spp_site_matrix Chowilla_WL_July 2018.csv",row.names=1) # load data - object name is 'tada' ... :)
+data.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Chowilla_data_csvs/"; setwd(data.dir)
+data.matrix.Chow=read.csv("Spp_site_matrix Chowilla_WL_May 2019 COMMON ONLY.csv",row.names=1) # load data - object name is 'tada' ... :)
 
 Output.Chow =data.matrix.Chow
 
 Output.Chow=Output.Chow[,-c(5)] # remove 'NA' column
 
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Gunbower_data_csvs/"; setwd (data.dir) 
-data.matrix.Gun=read.csv("Spp_site_matrix Gunbower_WL_July 2018.csv",row.names=1) # load data - object name is 'tada' ... :)
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Gunbower_data_csvs/"; setwd (data.dir) 
+data.matrix.Gun=read.csv("Spp_site_matrix Gunbower_WL_May 2019 COMMON ONLY.csv",row.names=1) # load data - object name is 'tada' ... :)
 
 Output.Gun =data.matrix.Gun
 
-Output.Gun=Output.Gun[,-grep("NA",colnames(Output.Gun))] # remove 'NA' column
-
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/KP_data_csvs/"; setwd (data.dir) 
-data.matrix.KP=read.csv("Spp_site_matrix KP_WL_July 2018.csv",row.names=1) # load data - object name is 'tada' ... :)
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/KP_data_csvs/"; setwd (data.dir) 
+data.matrix.KP=read.csv("Spp_site_matrix KP_WL_May 2019 COMMON ONLY.csv",row.names=1) # load data - object name is 'tada' ... :)
 
 Output.KP =data.matrix.KP
-Output.KP=Output.KP[,-grep("NA",colnames(Output.KP))] # remove 'NA' column
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
-data.matrix.Barm=read.csv("Spp_site_matrix Barmah_WL_July 2018.csv",row.names=1) # load data - object name is 'tada' ... :)
+
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Barmah_data_csvs/"; setwd (data.dir) 
+data.matrix.Barm=read.csv("Spp_site_matrix Barmah_WL_May 2019 COMMON ONLY.csv",row.names=1) # load data - object name is 'tada' ... :)
 
 Output.Barm =data.matrix.Barm
 
@@ -169,6 +167,8 @@ tada.Gun  = tada
 
 wetlandsALL <-rbind(wetlandsALL,tada.Gun)
 
+
+
 wetlandsALL [is.na(wetlandsALL )] <- 0
 
 ############################################## Bring in KP data
@@ -192,7 +192,6 @@ tada.KP  = tada
 
 wetlandsALL <-rbind(wetlandsALL,tada.KP)
 
-wetlandsALL [is.na(wetlandsALL )] <- 0
 
 
 ############################################## Bring in Barmah data
@@ -217,11 +216,14 @@ tada.Barm  = tada
 tada.Barm=as.data.frame(tada)
 
 wetlandsALL <-rbind(wetlandsALL,tada.Barm)
+wetlandsALL=ceiling(wetlandsALL)
+wetlandsALL[is.na(wetlandsALL)] <- 0 
+
+# for rare species removal...
+wetlandsALL<-dropspc(wetlandsALL, 10) 
 
 wetlandsALL [is.na(wetlandsALL )] <- 0
 
-data.dir="C:/Users/jc246980/Documents/MD Vegetation/"; setwd(data.dir)
-write.csv(wetlandsALL , file = "Full species by wetland matrix.csv") # save data out
 
 ########################################################################################################
 #### Clean up species codes and use only cleaned codes that exclude species of uncertain ID
@@ -230,7 +232,7 @@ wetlist=c("BIT","BLT", "BOT", "BRT", "CCS", "HT", "KT", "LHAT", "MOT", "NCT", "N
 
 Species <-as.data.frame(colnames(wetlandsALL))
 
-species.dir = "C:/Users/jc246980/Documents/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
+species.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Species lists for analysis/"; setwd (species.dir)
 mycodes=data.frame(read.csv("Species_Master_list_APNIcorrected_BARMAHV2.csv")) # this list has now been amended
 
 my_codes_clean=mycodes$sp_code_clean
@@ -239,20 +241,8 @@ my_codes_clean=unique(my_codes_clean[my_codes_clean!=""])# removes empty cells
 
 wetlandsALLV2 =wetlandsALL[,which(colnames(wetlandsALL) %in% my_codes_clean)] # this removes all unknown species and most sp. unless it was the only one of its genera
 
-########################################################################################################
-#### Beta dispersal assessment
-
-tada=wetlandsALLV2
-tada=tada[rowSums(tada!= 0) > 0,]	# remove sites with no records (e.g. BIT was not sampled until 2013 so there is no data for 2008-2012)
-tada=tada[,colSums(tada!= 0) > 0]
-
-tadaPA<-decostand(tada,method="pa")
-
-dis <- vegdist(tadaPA)
-groups <- factor(c(rep(1,12), rep(2,12), rep(3,15), rep(4,10), rep(5,14), rep(6,11)), labels = c("Hattah","LMW","Chowilla","Gunbower","KP","Barmah"))
-
-mod <- betadisper(dis, groups, type = c("centroid"))
-
+wetlandsALLV2PA<-decostand(wetlandsALLV2,method="pa")
+write.csv(wetlandsALLV2PA , file = "Full_TLM_dataset_PA_common_only.csv") # save data out for report Appendix 
 
 ########################################################################################################
 #### MDS analysis for both wetlands together with data summed across years and then turned in PA
@@ -270,6 +260,7 @@ tada=tada[rowSums(tada!= 0) > 0,]	# remove sites with no records (e.g. BIT was n
 tada=tada[,colSums(tada!= 0) > 0]
 
 tadaPA<-decostand(tada,method="pa")
+
 result<-metaMDS((tadaPA), distance="bray", autotransform=F, k=2,trymax=100)
 
 species.scores <- as.data.frame(scores(result, "species")) 
@@ -279,14 +270,14 @@ tdata=data.frame(MDS1=result$points[,1],MDS2=result$points[,2])
 tdata$sites=rownames(tdata)
 tdata$wetlandcomplex <-tdata$sites
 
-wetlist=c("HAT_BIT","HAT_BLT", "HAT_BOT", "HAT_BRT", "HAT_CCS", "HAT_HT", "HAT_KT", "HAT_LHAT", "HAT_MOT", "HAT_NCT", "HAT_NN", "HAT_YT")
+wetlist=c("HAT_BIT","HAT_BLT", "HAT_BOT","HAT_BRT","HAT_HT","HAT_KT", "HAT_MOT","HAT_NCT", "HAT_NN", "HAT_YT")
 tdata$wetlandcomplex[which(tdata$wetlandcomplex %in% wetlist)] <-"Hattah"
 
 wetlist=c("LMW_BB","LMW_CR","LMW_LP","LMW_UL","LMW_MUH","LMW_BI","LMW_UMWC","LMW_W33","LMW_SCB","LMW_MLH","LMW_WL","LMW_WW")
 tdata$wetlandcomplex[which(tdata$wetlandcomplex %in% wetlist)] <-"LMW"
 
 
-wetlist=c("CHOW_GUM","CHOW_KUL","CHOW_LLIT","CHOW_PD","CHOW_WWW","CHOW_CSW","CHOW_COX","CHOW_LLIM","CHOW_CWH","CHOW_MIH","CHOW_TWI","CHOW_WOO","CHOW_MON","CHOW_CIL","CHOW_BBW")
+wetlist=c("CHOW_GUM","CHOW_KUL","CHOW_LLIT","CHOW_PD","CHOW_WWW","CHOW_CSW","CHOW_COX","CHOW_LLIM","CHOW_CWH","CHOW_MIH","CHOW_TWI","CHOW_WOO","CHOW_MON","CHOW_BBW")
 tdata$wetlandcomplex[which(tdata$wetlandcomplex %in% wetlist)] <-"Chowilla"
 
 wetlist=c("GUN_LL","GUN_GS","GUN_LG","GUN_IP","GUN_RL","GUN_BLS","GUN_FB","GUN_CS","GUN_LR","GUN_COS")
@@ -320,7 +311,7 @@ setwd(image.dir)
 
 #### Plot
 
-png(paste(image.dir,"Wetlands together NMDS.png",sep=''),width=12.5, height=12, units='cm', res=500, pointsize=10, bg='white')
+png(paste(image.dir,"Wetlands together NMDS May 2019 Common species only.png",sep=''),width=12.5, height=12, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(2,1),cex=1,oma=c(2,0,1,0.5)) #defines plot parameters mfrow is number of images per sheet in this case its 5 rows by two columns
 
 wetlandsnmds <-ggplot(data = tdata, aes(MDS1, MDS2)) + geom_point(aes(color = wetlandcomplex)) +

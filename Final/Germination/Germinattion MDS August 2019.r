@@ -68,8 +68,6 @@ tada2<-dropspc(tada, 2)   # remove species that occur in = < two sites/date comb
 tada3=tada2[rowSums(tada2!= 0) > 0,]
 tada4=tada3[,colSums(tada3!= 0) > 0]
 
-tada=tada[rowSums(tada!= 0) > 0,]
-tada=tada[,colSums(tada!= 0) > 0]
 tadaPA<-decostand(tada4,method="pa") #  tadaPA on the data with rare species removed otherwise the nMDS is very skewed by a couple of samples
 
 
@@ -738,831 +736,173 @@ WetlandIndicators <-(summary(indval, alpha=0.05))
 
 
 ###############################################################################################################################################################################
-# Univariate data
-
-data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Germination results/"; setwd (data.dir)
-mydata=read.csv("Germination trials Aug 2019.csv") 
-#spinfo=read.csv("Species_info.csv")
-#mergeddata=merge(mydata,spinfo,by.x="Species...rectified", by.y="Germination.species.list", all.x=TRUE)
-
-remove= c("Spirodela spp.", "Adiantum sp.", "Cardamine flexuosa")
-#mergeddata=mergeddata[-which(mergeddata$Species...rectified %in% remove),]
-
-dataD1=mydata[grep("_D1",mydata$Label),]
-dataS1=mydata[grep("_S1",mydata$Label),]
-dataD1S1=rbind(dataD1,dataS1) # remove data from other replicates as different numbers of replicates undertaken
-dataD1S1=dataD1S1[!dataD1S1$Species...rectified %in% remove, ]
-
-mergeddata=dataD1S1
-mergeddata.exotic=mergeddata[(mergeddata$Exotic.Native =="Exotic"),]
-mergeddata.native=mergeddata[(mergeddata$Exotic.Native =="Native"),]
-
-mergeddata.annual=mergeddata[(mergeddata$Life.history =="annual"),]
-mergeddata.perennial=mergeddata[(mergeddata$Life.history =="perennial"),]
-
-mergeddata.Tree=mergeddata[(mergeddata$Life.form =="Tree"),]
-mergeddata.SS=mergeddata[(mergeddata$Life.form =="Sub-shrub"),]
-mergeddata.Shrub=mergeddata[(mergeddata$Life.form =="Shrub"),]
-mergeddata.Forb=mergeddata[(mergeddata$Life.form =="Forb"),]
-mergeddata.Grass=mergeddata[(mergeddata$Life.form =="Grass"),]
-mergeddata.Sedge.rush=mergeddata[(mergeddata$Life.form =="Sedge/rush"),]
-
-################################
-# Create matrix for full species
-species=unique(mergeddata$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.all=tada
-
-################################
-# Create matrix for full species
-species=unique(mergeddata.exotic$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.exotic=tada
-###############################
-# Create matrix for natives
-
-species=unique(mergeddata.native$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.native=tada
-
-################################
-# Create matrix for annual
-
-species=unique(mergeddata.annual$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.annual=tada
-
-################################
-# Create matrix for perennial
-
-species=unique(mergeddata.perennial$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.perennial=tada
-
-################################
-# Create matrix for tree
-
-species=unique(mergeddata.Tree$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.tree=tada
-################################
-# Create matrix for Shrub
-
-species=unique(mergeddata.Shrub$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.shrub=tada
-
-################################
-# Create matrix for SS
-
-species=unique(mergeddata.SS$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.SS=tada
-
-################################
-# Create matrix for Forb
-
-species=unique(mergeddata.Forb$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-
-tada.Forb=tada
-
-################################
-# Create matrix for Grass
-
-species=unique(mergeddata.Grass$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.Grass=tada
-
-################################
-# Create matrix for Sedge.rush
-
-species=unique(mergeddata.Sedge.rush$Species...rectified)
-sites <- unique(mydata$Site)
-tada = matrix(NA,nrow=length(sites),ncol=length(species))#define the output matrix
-rownames(tada)=sites
-colnames(tada)=species
-
-# Fill matrix
-for (s in sites) {
-
-tdata=mydata[grep(s,mydata$Site),c("Site_Treat_Rep","Treatment.rep","Species...rectified", "Count")]
-repcount=unique(tdata$Treatment.rep) # return number of replicates for Ds and Ss together
-Ds=length(grep("D", repcount))
-Ss=length(grep("S", repcount))
-ttdata=aggregate(tdata$Count, by=list(tdata$Species...rectified,tdata$Site_Treat_Rep),FUN=sum) # merge records for same species from same replicate
-colnames(ttdata)=c("Species", "Site_Treat_Rep", "Count")
-tdataD=ttdata[grep("_D",ttdata$Site_Treat_Rep),]
-tdataS=ttdata[grep("_S",ttdata$Site_Treat_Rep),]
-sitesp=unique(tdata$Species...rectified)
-
-for (sp in sitesp) {
-
-spdataD=tdataD[grep(sp,tdataD$Species),]
-spdataS=tdataS[grep(sp,tdataS$Species),]
-
-Averaged=(sum(spdataD$Count)/Ds)+(sum(spdataS$Count)/Ss)
-tada[grep(s,rownames(tada)),grep(sp,colnames(tada))] <-Averaged
-}
-}
-
-tada [is.na(tada )] <- 0
-tada.Sedge.rush=tada
-
-###############################
-
-mytada=as.data.frame(rownames(tada.all))
-mytada$Abund=rowSums(tada.all)
-tada.all[tada.all > 0] <- 1 
-mytada$Rich=rowSums(tada.all)
-
-mytada$ExoticAbund=rowSums(tada.exotic)
-tada.exotic[tada.exotic > 0] <- 1 
-mytada$ExoticRich=rowSums(tada.exotic)
-
-mytada$NativeAbund=rowSums(tada.native)
-tada.native[tada.native > 0] <- 1 
-mytada$NativeRich=rowSums(tada.native)
-
-mytada$AnnualAbund=rowSums(tada.annual)
-tada.annual[tada.annual > 0] <- 1 
-mytada$AnnualRich=rowSums(tada.annual)
-
-mytada$PerennialAbund=rowSums(tada.perennial)
-tada.perennial[tada.perennial > 0] <- 1 
-mytada$PerennialRich=rowSums(tada.perennial)
-
-mytada$TreeAbund=rowSums(tada.tree)
-tada.tree[tada.tree > 0] <- 1 
-mytada$TreeRich=rowSums(tada.tree)
-
-mytada$ShrubAbund=rowSums(tada.shrub)
-tada.shrub[tada.shrub > 0] <- 1 
-mytada$ShrubRich=rowSums(tada.shrub)
-
-mytada$SSAbund=rowSums(tada.SS)
-tada.SS[tada.SS > 0] <- 1 
-mytada$SSRich=rowSums(tada.SS)
-
-mytada$ForbAbund=rowSums(tada.Forb)
-tada.Forb[tada.Forb > 0] <- 1 
-mytada$ForbRich=rowSums(tada.Forb)
-
-mytada$GrassAbund=rowSums(tada.Grass)
-tada.Grass[tada.Grass > 0] <- 1 
-mytada$GrassRich=rowSums(tada.Grass)
-
-mytada$Sedge.rushAbund=rowSums(tada.Sedge.rush)
-tada.Sedge.rush[tada.Sedge.rush > 0] <- 1 
-mytada$Sedge.rush=rowSums(tada.Sedge.rush)
-
-#### Summary
-colnames(mytada)[1]="Site"
-mytada$Flow_cat=mytada$Site
-
-mytada$Flow_cat=as.character(mytada$Flow_cat)
-mytada$Flow_cat[grep("C1",mytada$Flow_cat)] <- "C1"
-mytada$Flow_cat[grepl("C2_",mytada$Flow_cat)] <- "C2"
-mytada$Flow_cat[grepl("C3_",mytada$Flow_cat)] <- "C3"
-mytada$Flow_cat[grepl("C4_",mytada$Flow_cat)] <- "C4"
-mytada$Flow_cat=as.factor(mytada$Flow_cat)
-
-mytada$Location=mytada$Site
-mytada$Location=as.character(mytada$Location)
-mytada$Location[grep("NL",mytada$Location)] <- "NL"
-mytada$Location[grep("MQ",mytada$Location)] <- "MQ"
-mytada$Location[grep("MM",mytada$Location)] <- "MM"
-mytada$Location[grep("LM",mytada$Location)] <- "LM"
-mytada$Location=as.factor(mytada$Location)
-
-mytada$Veg=mytada$Site
-mytada$Veg=as.character(mytada$Veg)
-mytada$Veg[grep("IS",mytada$Veg)] <- "IS"
-mytada$Veg[grep("IW",mytada$Veg)] <- "IW"
-mytada$Veg[grep("NWW",mytada$Veg)] <- "NWW"
-mytada$Veg=as.factor(mytada$Veg)
-
-
-write.csv(mytada, file = "Germination univariate summary May 2019.csv") # save data out 
-
-
-
-########################################
-#### Plots
-
-library(ggplot2)
-library(gridExtra)
-library(plyr)
-library(dplyr)
-data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Germination results/"; setwd (data.dir)
-mytada=read.csv("Germination univariate summary May 2019.csv") 
-
-variables=c("Abund", "Rich", "ExoticAbund", "ExoticRich","NativeAbund", "NativeRich")
-
-myd=mytada
-
-
-png(paste('Germination_Seedling Abundances May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise,N=length(Abund), val = mean(Abund), se=sd(Abund)/sqrt(N))
+# Multivariate analysis
+
+mydata=tada4 # species abundance metrix 
+
+Wetland=rownames(mydata)
+Wetland[grep("NL",Wetland)] <-"Narran Lakes"
+Wetland[grep("MQ",Wetland)] <-"Maquarie Marshes"
+Wetland[grep("MM",Wetland)] <-"Mid Murray"
+Wetland[grep("LM",Wetland)] <-"Lower Murray"
+Wetland=as.factor(Wetland)
+
+dis <- vegdist(mydata)
+mod <- betadisper(dis, Wetland) # dispersion is signfiicantly lower in MQ but design is unbalanced
+
+# Narran - balanced subset with inland woodlands removed
+
+tada_NL=tada4[grep("NL",rownames(tada4)),]
+tada_NL_sub1=tada_NL[-grep("_IW_",rownames(tada_NL)),]
+
+FF_NL=rownames(tada_NL_sub1)
+
+FF_NL[grepl("_C1",FF_NL)] <- "C1"
+FF_NL[grepl("_C2",FF_NL)] <- "C2"
+FF_NL[grepl("_C3",FF_NL)] <- "C3"
+FF_NL[grepl("_C4",FF_NL)] <- "C4"
+
+Veg_NL=rownames(tada_NL_sub1)
+Veg_NL[grep("_IS",Veg_NL)] <-"IS"
+Veg_NL[grep("_NWW",Veg_NL)] <-"NWW"
+
+Narran.both=cbind(tada_NL_sub1,as.data.frame(FF_NL),as.data.frame(Veg_NL))
+
+Narran.perm <-adonis(tada_NL_sub1 ~ FF_NL*Veg_NL, data=Narran.both ,method = "bray", permutations=999)
+
+dis <- vegdist(tada_NL_sub1)
+mod <- betadisper(dis, FF_NL) 
+
+mod <- betadisper(dis, Veg_NL) # F=7.7246, P=0.0084)
+
+# Narran - balanced subset with C2 removed
+
+tada_NL_sub2=tada_NL[-grep("_C2_",rownames(tada_NL)),]
+
+FF_NL=rownames(tada_NL_sub2)
+
+FF_NL[grepl("_C1",FF_NL)] <- "C1"
+FF_NL[grepl("_C3",FF_NL)] <- "C3"
+FF_NL[grepl("_C4",FF_NL)] <- "C4"
+
+Veg_NL=rownames(tada_NL_sub2)
+Veg_NL[grep("_IS",Veg_NL)] <-"IS"
+Veg_NL[grep("_NWW",Veg_NL)] <-"NWW"
+Veg_NL[grep("_IW",Veg_NL)] <-"IW"
+
+Narran.both=cbind(tada_NL_sub2,as.data.frame(FF_NL),as.data.frame(Veg_NL))
+
+Narran.perm <-adonis(tada_NL_sub2 ~ FF_NL*Veg_NL, data=Narran.both ,method = "bray", permutations=999)
+
+dis <- vegdist(tada_NL_sub2)
+mod <- betadisper(dis, FF_NL) 
+mod <- betadisper(dis, Veg_NL) 
+
+# Marshes - balanced subset with inland shrubland removed
+
+tada_MQ=tada4[grep("MQ",rownames(tada4)),]
+tada_MQ_sub1=tada_MQ[-grep("_IS_",rownames(tada_MQ)),]
+
+#mq.try<-metaMDS(tada_MQ_sub1, distance="bray", autotransform=T, k=2,trymax=100)
+#FF_MQ <-as.factor(FF_MQ)
+#with(tada_MQ_sub1, ordihull(mq.try, group=FF_MQ))
+
+FF_MQ=rownames(tada_MQ_sub1)
+
+FF_MQ[grepl("_C1",FF_MQ)] <- "C1"
+FF_MQ[grepl("_C2",FF_MQ)] <- "C2"
+FF_MQ[grepl("_C3",FF_MQ)] <- "C3"
+FF_MQ[grepl("_C4",FF_MQ)] <- "C4"
+
+Veg_MQ=rownames(tada_MQ_sub1)
+Veg_MQ[grep("_IW",Veg_MQ)] <-"IS"
+Veg_MQ[grep("_NWW",Veg_MQ)] <-"NWW"
+
+Marshes.both=cbind(tada_MQ_sub1,as.data.frame(FF_MQ),as.data.frame(Veg_MQ))
+Marshes.perm <-adonis(tada_MQ_sub1 ~ FF_MQ*Veg_MQ, data=Marshes.both ,method = "bray", permutations=999)
+
+dis <- vegdist(tada_MQ_sub1)
+mod <- betadisper(dis, FF_MQ)
+
+dis <- vegdist(tada_MQ_sub1)
+mod <- betadisper(dis, Veg_MQ) 
+
+# Marshes - balanced subset with C1 removed
+
+tada_MQ_sub2=tada_MQ[-grep("_C1_",rownames(tada_MQ)),]
+
+#mq.try<-metaMDS(tada_MQ_sub2, distance="bray", autotransform=T, k=2,trymax=100)
+#FF_MQ <-as.factor(FF_MQ)
+#with(tada_MQ_sub2, ordihull(mq.try, group=FF_MQ))
+
+FF_MQ=rownames(tada_MQ_sub2)
+
+FF_MQ[grepl("_C2",FF_MQ)] <- "C2"
+FF_MQ[grepl("_C3",FF_MQ)] <- "C3"
+FF_MQ[grepl("_C4",FF_MQ)] <- "C4"
+
+Veg_MQ=rownames(tada_MQ_sub2)
+Veg_MQ[grep("_IW",Veg_MQ)] <-"IW"
+Veg_MQ[grep("_NWW",Veg_MQ)] <-"NWW"
+Veg_MQ[grep("_IS",Veg_MQ)] <-"IS"
+
+Marshes.both=cbind(tada_MQ_sub2,as.data.frame(FF_MQ),as.data.frame(Veg_MQ))
+Marshes.perm <-adonis(tada_MQ_sub2 ~ FF_MQ*Veg_MQ, data=Marshes.both ,method = "bray", permutations=999)
+
+dis <- vegdist(tada_MQ_sub2)
+mod <- betadisper(dis, FF_MQ)
+
+TukeyHSD(mod, which = "group", ordered = FALSE, conf.level = 0.95)
+
+dis <- vegdist(tada_MQ_sub2)
+mod <- betadisper(dis, Veg_MQ) 
+
+# Middle Murray - balanced subset with C3,C4 and IS removed
+
+tada_MM=tada4[grep("MM",rownames(tada4)),]
+tada_MM_sub1=tada_MM[-grep("_C3_",rownames(tada_MM)),]
+
+FF_MM=rownames(tada_MM_sub1)
+FF_MM[grepl("_C2",FF_MM)] <- "C2"
+FF_MM[grepl("_C1",FF_MM)] <- "C1"
+
+Veg_MM=rownames(tada_MM_sub1)
+Veg_MM[grep("_IW",Veg_MM)] <-"IW"
+Veg_MM[grep("_NWW",Veg_MM)] <-"NWW"
+
+MM.both=cbind(tada_MM_sub1,as.data.frame(FF_MM),as.data.frame(Veg_MM))
+MM.perm <-adonis(tada_MM_sub1 ~ FF_MM*Veg_MM, data=MM.both ,method = "bray", permutations=999)
+
+dis <- vegdist(tada_MM_sub1)
+mod <- betadisper(dis, FF_MM)
+
+dis <- vegdist(tada_MM_sub1)
+mod <- betadisper(dis, Veg_MM) 
+
+# Lower Murray - balanced subset with C1 removed as absent
+
+tada_LM_sub1=tada4[grep("LM",rownames(tada4)),]
+
+
+FF_LM=rownames(tada_LM_sub1)
+FF_LM[grepl("_C2",FF_LM)] <- "C2"
+FF_LM[grepl("_C3",FF_LM)] <- "C3"
+FF_LM[grepl("_C4",FF_LM)] <- "C4"
+
+Veg_LM=rownames(tada_LM_sub1)
+Veg_LM[grep("_IW",Veg_LM)] <-"IW"
+Veg_LM[grep("_NWW",Veg_LM)] <-"NWW"
+Veg_LM[grep("_IS",Veg_LM)] <-"IS"
+
+LM.both=cbind(tada_LM_sub1,as.data.frame(FF_LM),as.data.frame(Veg_LM))
+LM.perm <-adonis(tada_LM_sub1 ~ FF_LM*Veg_LM, data=LM.both ,method = "bray", permutations=999)
+
+dis <- vegdist(tada_LM_sub1)
+mod <- betadisper(dis, FF_LM)
+
+dis <- vegdist(tada_LM_sub1)
+mod <- betadisper(dis, Veg_LM) 
+
+
+
  
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean seedling abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-
-png(paste('Germination_Seedling Richness May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(Rich), val = mean(Rich), se=sd(Rich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean species Richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Exotic Abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise,  N=length(ExoticAbund), val = mean(ExoticAbund), se=sd(ExoticAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val,colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean exotic abundance") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Exotic proportion May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(ExoticAbund/Abund), val = mean(ExoticAbund/Abund), se=sd(ExoticAbund/Abund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean exotic proportions") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Exotic Rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(ExoticRich), val = mean(ExoticRich), se=sd(ExoticRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean exotic species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Native abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise,  N=length(NativeAbund), val = mean(NativeAbund), se=sd(NativeAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean native abundance") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Native rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(NativeRich), val = mean(NativeRich), se=sd(NativeRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean native species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Annual abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(AnnualAbund), val = mean(AnnualAbund), se=sd(AnnualAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean annual abundance") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Annual rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(AnnualRich), val = mean(AnnualRich), se=sd(AnnualRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean annual species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Perennial abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(PerennialAbund), val = mean(PerennialAbund), se=sd(PerennialAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean perennial abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Forb rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(ForbRich), val = mean(ForbRich), se=sd(ForbRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) +
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean forb species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Forb abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(ForbAbund), val = mean(ForbAbund), se=sd(ForbAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean forb abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-		
-png(paste('Germination_Grass rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(GrassRich), val = mean(GrassRich), se=sd(GrassRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean grass species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Grass abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(GrassRich), val = mean(GrassRich), se=sd(GrassRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) +
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean grass abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_sedge rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(Sedge.rush), val = mean(Sedge.rush), se=sd(Sedge.rush)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) +
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +		
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean sedge species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Sedge abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(Sedge.rushAbund), val = mean(Sedge.rushAbund), se=sd(Sedge.rushAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) +
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +		
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean sedge abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Tree rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(TreeRich), val = mean(TreeRich), se=sd(TreeRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) +
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean tree species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Tree abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise,  N=length(TreeAbund), val = mean(TreeAbund), se=sd(TreeAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean tree abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_SS rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(SSRich), val = mean(SSRich), se=sd(SSRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean subshrub species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_SS abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(SSAbund), val = mean(SSAbund), se=sd(SSAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean subshurb abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-	
-png(paste('Germination_Shrub rich May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(ShrubRich), val = mean(ShrubRich), se=sd(ShrubRich)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean shrub species richness") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-png(paste('Germination_Shrub abund May 2019.png',sep=''), width=2000, height=2000, units="px", res=300)
-
-mydsum <- ddply(myd,.(Flow_cat,Veg,Location),summarise, N=length(ShrubAbund), val = mean(ShrubAbund), se=sd(ShrubAbund)/sqrt(N))
-
-    ggplot(mydsum, aes(x = factor(Flow_cat), y = val, colour = Veg)) + 
-    geom_point(data = mydsum, aes(y = val)) +
-    geom_line(data = mydsum, aes(y = val, group = Veg)) + 
-	geom_errorbar(data=mydsum, aes(ymin=val-se, ymax=val+se), width=.1) +	
-    theme_bw()+
-    xlab("Flow category")+ # for the x axis label
-    ylab("Mean shrub abundances") + labs(colour = "Overstorey")+facet_wrap(. ~ Location,ncol=2)
-
-	dev.off()
-
-#########################################################################################################################
-#### Subset data into the balnaced component. subset 1 is FF C2, C3 and C4 for Veg IS and NWW at locations LM, MQ and NL
-
-
-mytada=read.csv("Germination univariate summary.csv") 
-
-subset1 <- mytada[!mytada$Location=="Middle Murray",]
-subset1 <- subset1[!subset1$Flow_cat=="C1",]
-subset1 <- subset1[!subset1$Veg=="IW",]
-
-
-
-
-

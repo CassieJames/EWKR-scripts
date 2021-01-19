@@ -1,12 +1,16 @@
 ##########################################################################################################################################
 #### Script for species accumulation curves for Hattah wetlands
+image.dir="C:/Users/jc246980/Documents/Current projects/MD Vegetation/Plots/"
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
+Output=read.csv("Spp_site_year_transect matrix HTH_WL_May 2019 ABUND.csv", row.names=1) # import 
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Hattah_data_csvs/"; setwd (data.dir) 
-Output=read.csv("Spp_site_year_transect matrix HTH_WL_June 2018.csv", row.names=1) # import 
 
-wetlist=c("BIT","BLT", "BOT", "BRT", "CCS", "HT", "KT", "LHAT", "MOT", "NCT", "NN", "YT")
+rownames (Output) <- gsub("LHT", "LHAT", rownames(Output)) 
+rownames (Output) <- gsub("CHT", "CCS", rownames(Output)) 
 
-png(paste(image.dir,"Hattah Wetlands accumulation_curves_method collector PA.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
+wetlist=c("BIT","BLT", "BOT", "BRT", "CCS", "HT","LHAT", "KT", "MOT", "NCT", "NN", "YT")
+
+png(paste(image.dir,"Hattah Wetlands accumulation_curves_May 2019.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(4,3),cex=1,oma=c(2,0,1,0.5))
 		
 for(w in wetlist) { # 
@@ -42,12 +46,12 @@ dev.off()
 ##########################################################################################################################################
 #### Script for species accumulation curves for LMW wetlands
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
-Output=read.csv("Spp_site_year_transect matrix LMW_WL_June 2018", row.names=1) # import data
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/LMW_data_csvs/"; setwd (data.dir) 
+Output=read.csv("Spp_site_year_transect matrix LMW_May 2019 ABUND.csv", row.names=1) # import data
 
 wetlist=c("BB","CR","LP","UL","MUH","BI","UMWC","W33","SCB","MLH","WL","WW")
 
-png(paste(image.dir,"LMW Wetlands accumulation_curves_method collector PA.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
+png(paste(image.dir,"LMW Wetlands accumulation_curves_May 2019.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(4,3),cex=1,oma=c(2,0,1,0.5))
 		
 for(w in wetlist) { # 
@@ -85,13 +89,13 @@ dev.off()
 ##########################################################################################################################################
 #### Script for species accumulation curves for Gunbower wetlands
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/Gunbower_data_csvs/"; setwd (data.dir) 
-Output=read.csv("Spp_site_year_transect matrix wetland Gunbower_WL_June2018.csv", row.names=1) # import data
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/Gunbower_data_csvs/"; setwd (data.dir) 
+Output=read.csv("Spp_site_transect_year_season matrix Gunbower_WL_May 2019 ABUND.csv", row.names=1) # import data
 
 wetlist=c("LL","GS","LG","IP","RL","BLS","FB","CS","LR","COS")
 
 
-png(paste(image.dir,"Gunbower Wetlands accumulation_curves_method collector PA.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
+png(paste(image.dir,"Gunbower Wetlands accumulation_curves_May 2019.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(4,3),cex=1,oma=c(2,0,1,0.5))
 		
 for(w in wetlist) { # 
@@ -127,14 +131,12 @@ dev.off()
 ##########################################################################################################################################
 #### Script for species accumulation curves for KP wetlands
 
-data.dir = "C:/Users/jc246980/Documents/MD Vegetation/KP_data_csvs/"; setwd (data.dir) 
-Output=read.csv("Spp_site_year_transect matrix wetland_KP_June2018.csv", row.names=1) # import data
+data.dir = "C:/Users/jc246980/Documents/Current projects/MD Vegetation/KP_data_csvs/"; setwd (data.dir) 
+Output=read.csv("Spp_site_year_transect_matrix_KP_WL_May 2019.csv", row.names=1) # import data
 
 wetlist=c("PR1","SL","WH","BW","CLT","TL","PS","PAW","BC","PRW","PB","PJW") # need to make sure that the wetland names are not subsets of each ot
 
-
-
-png(paste(image.dir,"KP Wetlands accumulation_curves_method collector PA part1.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
+png(paste(image.dir,"KP Wetlands accumulation_curves_method May 2019.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(4,3),cex=1,oma=c(2,0,1,0.5))
 		
 for(w in wetlist) { # 
@@ -167,9 +169,10 @@ legend('bottomright', legend = c(paste("Chao =", chao),paste("Exact =",Exact)))
 }
 dev.off()
 
+
 wetlist=c("BL","PLL") 
 
-png(paste(image.dir,"KP Wetlands accumulation_curves_method collector PA part2.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
+png(paste(image.dir,"KP Wetlands accumulation_curves_May 2019 Part 2.png",sep=''),width=20, height=25, units='cm', res=500, pointsize=10, bg='white')
         par(mar=c(4,4,1,1),mfrow=c(4,3),cex=1,oma=c(2,0,1,0.5))
 		
 for(w in wetlist) { # 
